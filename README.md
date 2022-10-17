@@ -8,3 +8,7 @@ Design Goals:
 Looks like the Blinkenlights is what I am looking for. So I am now making a board that will handle take the Blinkinlights API.
 
 http://retrocmp.com/projects/blinkenbone/172-blinkenbone-high-level-interface-api-to-panels
+
+
+Blinkinlights EXE:
+https://github.com/j-hoppe/BlinkenBone/releases
