@@ -7,6 +7,24 @@ Design Goals:
 1. Make smaller Blinkin Boards to extend?
 1. Would be nice to allow it to emulate a PDP-8 also.
 
+Programming Bit Reference:
+
+LED Date (PIN_PD2):
+Bit 0 - 15
+
+| 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10| 11| 12| 13| 14| 15| 
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| D0| D1| D2| D3| D4| D5| D6| D7|INT| WO|Stack|HLTA|OUT|IN|INP|MEMR|
+
+| 16| 17| 18| 19| 20| 21| 22| 23| 24| 25| 26| 27| 28| 29| 30| 31|
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| A0| A1| A2| A3| A4| A5| A6| A7| A8| A9|A10|A11|A12|A13|A14|A15|
+
+| 32| 33| 34| 35| 36| 37| 38| 39|
+|---|---|---|---|---|---|---|---|
+|PROT|INTE|WAIT|HLDA|User1|User2|User3|User4|
+
+
 H1 (LED) Connections:
 
 | Pin | Name |  | Pin | Name |
