@@ -9,7 +9,8 @@ Design Goals:
 
 Connections:
 
-| Pin | Name | - | Pin | Name |
+| Pin | Name | = | Pin | Name |
+|-----|------|---|-----|------|
 H1-1 |A15|-|H1-2 | INTE |
 H1-3 |A14|H1-4 | PROT |
 H1-5 |A13|H1-6 | WAIT |
