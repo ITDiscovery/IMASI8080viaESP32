@@ -8,6 +8,7 @@ Design Goals:
 1. Would be nice to allow it to emulate a PDP-8 also.
 
 Connections:
+
 | Pin | Name | - | Pin | Name |
 H1-1 |A15|-|H1-2 | INTE |
 H1-3 |A14|H1-4 | PROT |
