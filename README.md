@@ -1,5 +1,6 @@
 # Altair8800viaAVR
-I'll be creating a smaller board the will have a mini "mock up" of an Altair 8800.
+I created a small board the also has a mini "mock up" of an Altair 8800 front panel via DIP switches and LED bar graphs.
+The board has two 40 pin connectors to wire up to external LEDs and switches.
 
 Design Goals:
 1. Use the AVR12828 and add the required I/O 74HCT165 (input) and 74LS595 (output).
@@ -68,31 +69,29 @@ H2 (Switch) Connections:
 
 | Pin | Name |  | Pin | Name |
 |-----|------|---|-----|------|
-|H2-1 |Gnd|H2-2 |Gnd|
-|H2-3 |Gnd|H2-4 |Gnd|
-|H2-5 |+5V|H2-6 |+5V|
-|H2-7 |+5V|H2-8 |+5V|
-|H2-9 |AUX1 DOWN|H3-10 |A15|
-|H2-11 |AUX1 UP|H2-12 |A14|
-|H2-13 |AUX DOWN|H2-14 |A13|
-|H2-15 |AUX UP|H2-16 |A12|
-|H2-17 |UNPROTECT|H2-18 |A11|
-|H2-19 |PROTECT|H2-20 |A10|
-|H2-21 |CLR|H2-22 |A9|
-|H2-23 |RESET|H2-24 |A8|
-|H2-25 |DEPOSIT NEXT|H2-26 |A7|
-|H2-27 |DEPOSIT|H2-28 |A6|
-|H2-39 |EXAMINE NEXT|H2-30 |A5|
-|H2-31 |EXAMINE|H2-32 |A4|
-|H2-33 |SS DOWN|H2-34 |A3|
-|H2-35 |SINGLE STEP|H2-36 |A2|
-|H2-37 |RUN|H2-38 |A1|
-|H2-39 |STOP|H2-40 |A0|
+|H2-1 |A0|H2-2 |A1|
+|H2-3 |A2|H2-4 |A3|
+|H2-5 |A4|H2-6 |A5|
+|H2-7 |A6|H2-8 |A7|
+|H2-9 |A8|H3-10 |A9|
+|H2-11 |A10|H2-12 |A11|
+|H2-13 |A12|H2-14 |A13|
+|H2-15 |A14|H2-16 |A15|
+|H2-17 |Stop|H2-18 |Run|
+|H2-19 |S-Step|H2-20 |S-Step Down|
+|H2-21 |Examoine|H2-22 |Examine Next|
+|H2-23 |Depost|H2-24 |Deposit Next|
+|H2-25 |Reset|H2-26 |Clr|
+|H2-27 |Protect|H2-28 |Unprotect|
+|H2-39 |Aux Up|H2-30 |Aux Down|
+|H2-31 |Aux1 Up|H2-32 |Aux1 Down|
+|H2-33 |+5V|H2-34 |Gnd|
+|H2-35 |+5V|H2-36 |Gnd|
+|H2-37 |+5V|H2-38 |Gnd|
+|H2-39 |+5V|H2-40 |Gnd|
 
 Update: Dumped the TM1638, as it had trouble dealing with more than a few switches on at the same time, especially with 7-Segments
 connected. 
-
-
 
 Looks like the Blinkenlights is what I am looking for. I'll be looking to create a board that I can get it to read off the
 Blinkinlights API. Since the board I am making can run off of Data Clock and Latch (and I'm gonna see if Clock can be shared between
