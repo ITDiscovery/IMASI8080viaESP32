@@ -104,3 +104,7 @@ http://retrocmp.com/projects/blinkenbone/172-blinkenbone-high-level-interface-ap
 
 Blinkinlights EXE:
 https://github.com/j-hoppe/BlinkenBone/releases
+
+Altair via shift registers: 
+https://github.com/companje/Altair8800
+
