@@ -8,6 +8,9 @@ Design Goals:
 1. Make smaller Blinkin Boards to extend?
 1. Would be nice to allow it to emulate a PDP-8 also.
 
+3D Printer Toggle Paddles, Switch and LED Mounts:
+https://www.thingiverse.com/thing:5627711
+
 Programming Bit Reference:
 
 LED Data (PIN_PD2):
