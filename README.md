@@ -5,7 +5,7 @@ The board has two 40 pin connectors to wire up to external LEDs and switches.
 Design Goals:
 1. Use the AVR12828 and add the required I/O 74HCT165 (input) and 74LS595 (output).
 1. Would be nice to have it connectable to a Raspberry Pi.
-1. Make smaller Blinkin Boards to extend?
+1. Make smaller Blinkin Boards to extend? Such as a 7-Segment to show address and data bus values.
 1. Would be nice to allow it to emulate a PDP-8 also.
 
 3D Printer Toggle Paddles, Switch and LED Mounts:
