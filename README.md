@@ -3,10 +3,12 @@ I created a small board the also has a mini "mock up" of an Altair 8800 front pa
 The board has two 40 pin connectors to wire up to external LEDs and switches.
 
 Design Goals:
-1. Use the AVR12828 and add the required I/O 74HCT165 (input) and 74LS595 (output).
+1. Use the AVR128DB28 and add the required I/O 74HCT165 (input) and 74LS595 (output).
 1. Would be nice to have it connectable to a Raspberry Pi.
 1. Make smaller Blinkin Boards to extend? Such as a 7-Segment to show address and data bus values.
 1. Would be nice to allow it to emulate a PDP-8 also.
+
+Had to dump the idea of using AVR128DB28 Flash...newly posted specs show only a 1K cycle. Version A uses a 23LC512 (much slower).
 
 3D Printer Toggle Paddles, Switch and LED Mounts:
 https://www.thingiverse.com/thing:5627711
