@@ -33,3 +33,12 @@ set sio ansi
 set sio nosleep
 boot dsk
 ```
+Now on to installing the Blinkenboard Server
+```
+cd /home/pi/simh
+git clone https://github.com/j-hoppe/BlinkenBone.git
+sudo apt-get install ant
+
+
+
+```
