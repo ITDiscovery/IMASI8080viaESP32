@@ -8,7 +8,11 @@ Design Goals:
 1. Make smaller Blinkin Boards to extend? Such as a 7-Segment to show address and data bus values.
 1. Would be nice to allow it to emulate a PDP-8 also.
 
-Had to dump the idea of using AVR128DB28 Flash...newly posted specs show only a 1K cycle. Version A uses a 23LC512 (much slower).
+Had to dump the idea of using AVR128DB28 Flash...newly posted specs show only a 1K cycle. RevB and on uses a 23LC512 (much slower, and uses an additional 4 pins from the AVR, but using an AVR64DB28 is not possible).
+
+RevA boards would need too many mods.
+RevB boards will need to a mod to go from Pin 1 of U2 to Pin 24 of H3.
+
 
 3D Printer Toggle Paddles, Switch and LED Mounts:
 https://www.thingiverse.com/thing:5627711
