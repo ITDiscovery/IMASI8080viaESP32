@@ -114,3 +114,9 @@ https://github.com/j-hoppe/BlinkenBone/releases
 Altair via shift registers: 
 https://github.com/companje/Altair8800
 
+Rasperry Pi Note:
+Big problems with a C++ library for GPIO, due to trolls annoying the original author. Here's how to install wiringPi:
+
+git clone https://github.com/WiringPi/WiringPi.git
+cd WiringPi
+./build
