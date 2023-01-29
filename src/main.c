@@ -23,6 +23,8 @@ void dump_regs(intel8080_t *cpu)
 	printf("Adr:%04x\t DB:%02x\t PC:%04x\t C:%02x\t D:%02x\t E:%02x\n", cpu->address_bus, cpu->data_bus, cpu->registers.pc, cpu->registers.c, cpu->registers.d, cpu->registers.e);
 }
 
+// IO Table is found in intel8080_out and intel8080_in
+
 uint8_t term_in()
 {
 	uint8_t b;
@@ -46,6 +48,7 @@ void term_out(uint8_t b)
 uint8_t memory[64*1024];
 uint16_t cmd_switches;
 uint16_t bus_switches;
+uint16_t bus_status;
 
 void load_file(intel8080_t *cpu)
 {
@@ -73,7 +76,6 @@ const char *byte_to_binary(int x)
     return b;
 }
 
-
 void load_mem_file(const char* filename, size_t offset)
 {
 	size_t size;
@@ -98,8 +100,8 @@ void load_raw_data(uint8_t program[], int s, int offset) {
 
 void load_roms()
 {
-       load_mem_file("software/ROMs/DBL.bin", 0xff00);
-       /*uint8_t bootldr[] = {
+       //load_mem_file("software/ROMs/DBL.bin", 0xff00);
+       uint8_t bootldr[] = {
        0x21,0x13,0xFF,0x11,0x00,0x2C,0x0E,0xEB,
        0x7E,0x12,0x23,0x13,0x0D,0xC2,0x08,0xFF,0xEC,
        0xC3,0x00,0x2C,0xF3,0xAF,0xD3,0x22,0x2F,0xD3,
@@ -114,18 +116,26 @@ void load_roms()
        0xF5,0xD5,0xC5,0xD5,0x11,0x86,0x80,0x68,
        0x21,0xEB,0x2C,0xDB,0x09,0x1F,0xDA,0x50,
        0x2C,0xE6,0x1F,0xB8,0xC2,0x50,0x2C,0xDB,0x2A,
-       0x8B,0x7F,0xA5,0xC2,0xCD,0xB0,0xA7,0x72,0x31,
-       0xDC,0xA7,0x22,0xC1,0xDD,0xB0,0xA3A
-       7723C25C2CE111EE2C0180001A77BEC2EF
-       CB2C804713230DC2792C1AFEFFC2902C64
-       131AB8C1EBC2C22CF1F12AEC2CCDE52C0E
-       D2BB2C040478FE20DA442C0601CA442C5F
-       DB08E602C2AD2C3E01D309C3422C3E80C1
-       D308C30000D1F13DC2462C3E43013E4D43
-       FB320000220100473E80D30878D301D3C2
-       11D305D323C3DA2C7ABCC07BBDC9000062
+       0x08,0xB7,0xFA,0x5C,0x2C,0xDB,0x0A,0x77,0x23,
+	   0x1D,0xCA,0x72,0x2C,0x1D,0xDB,0x0A,0x3A,
+       0x77,0x23,0xC2,0x5C,0x2C,0xE1,0x11,0xEE,0x2C,
+	   0x01,0x80,0x00,0x1A,0x77,0xBE,0xC2,0xEF,
+	   0xCB,0x2C,0x80,0x47,0x13,0x23,0x0D,0xC2,0x79,
+	   0x2C,0x1A,0xFE,0xFF,0xC2,0x90,0x2C,0x64,
+	   0x13,0x1A,0xB8,0xC1,0xEB,0xC2,0xC2,0x2C,0xF1,
+	   0xF1,0x2A,0xEC,0x2C,0xCD,0xE5,0x2C,0x0E,
+       0xD2,0xBB,0x2C,0x04,0x04,0x78,0xFE,0x20,0xDA,
+	   0x44,0x2C,0x06,0x01,0xCA,0x44,0x2C,0x5F,
+	   0xDB,0x08,0xE6,0x02,0xC2,0xAD,0x2C,0x3E,0x01,
+	   0xD3,0x09,0xC3,0x42,0x2C,0x3E,0x80,0xC1,
+       0xD3,0x08,0xC3,0x00,0x00,0xD1,0xF1,0x3D,0xC2,
+	   0x46,0x2C,0x3E,0x43,0x01,0x3E,0x4D,0x43,
+       0xFB,0x32,0x00,0x00,0x22,0x01,0x00,0x47,0x3E,
+	   0x80,0xD3,0x08,0x78,0xD3,0x01,0xD3,0xC2,
+	   0x11,0xD3,0x05,0xD3,0x23,0xC3,0xDA,0x2C,0x7A,
+	   0xBC,0xC0,0x7B,0xBD,0xC9,0x00,0x00,0x62 };
+
        load_raw_data(bootldr,sizeof(bootldr),0xff00);
-       */
        load_mem_file("software/ROMs/8KBasic/8kBas_e0.bin", 0xe000);
        load_mem_file("software/ROMs/8KBasic/8kBas_e8.bin", 0xe800);
        load_mem_file("software/ROMs/8KBasic/8kBas_f0.bin", 0xf000);
@@ -141,6 +151,7 @@ int main(int argc, char *argv[])
 	struct sockaddr client_addr;
 	int sock_size;
 	uint16_t breakpoint = 0x0;
+	bus_status = 0xF000;
 	disk_controller_t disk_controller;
 	intel8080_t cpu;
 	uint32_t last_debounce = millis();
@@ -187,27 +198,23 @@ int main(int argc, char *argv[])
 
 	i8080_examine(&cpu, 0x0000); //This sets CPU start to 0x000
 
-	uint8_t cmd_state;
-	uint8_t last_cmd_state = 0;
+	uint16_t cmd_state;
+	uint16_t last_cmd_state = 0;
 	uint8_t mode = STOP;
-	
 	uint32_t cycle_counter = 0;
 
 	while(1)
 	{
-        dump_regs(&cpu);
-        //printf("Cmd:%04x\tBus:%04x\n",cmd_switches,bus_switches);
-		printf("Mode:%02x\n",mode);
 		if(mode == RUN)
 		{
 			i8080_cycle(&cpu);
 			cycle_counter++;
 			if(cycle_counter % 10 == 0)
-				read_write_panel(0, cpu.data_bus, cpu.address_bus, &bus_switches, &cmd_switches, 1);
+				read_write_panel(bus_status, cpu.data_bus, cpu.address_bus, &bus_switches, &cmd_switches, 1);
 		}
 		else
 		{
-			read_write_panel(0, cpu.data_bus, cpu.address_bus, &bus_switches, &cmd_switches, 1);
+			read_write_panel(bus_status, cpu.data_bus, cpu.address_bus, &bus_switches, &cmd_switches, 1);
 		}
 
 		if(cmd_switches != last_cmd_state)
@@ -228,6 +235,9 @@ int main(int argc, char *argv[])
 					}
 					if(cmd_switches & SINGLE_STEP)
 					{
+						printf("Single Step at %x\n", bus_switches);
+						bus_status |= MI;
+						read_write_panel(bus_status, cpu.data_bus, cpu.address_bus, &bus_switches, &cmd_switches, 1);
 						i8080_cycle(&cpu);
 					}
 					if(cmd_switches & EXAMINE)
@@ -237,19 +247,58 @@ int main(int argc, char *argv[])
 					}
 					if(cmd_switches & EXAMINE_NEXT)
 					{
+						printf("Examine Next %x\n", bus_switches);
 						i8080_examine_next(&cpu);
 					}
 					if(cmd_switches & DEPOSIT)
 					{
+						printf("Deposit %x\n", bus_switches);
 						i8080_deposit(&cpu, bus_switches & 0xff);
 					}
 					if(cmd_switches & DEPOSIT_NEXT)
 					{
+						printf("Deposit Next %x\n", bus_switches);
 						i8080_deposit(&cpu, bus_switches & 0xff);
+					}
+					if(cmd_switches & RESET_CMD)
+					{
+						printf("Reset\n");
+						i8080_reset(&cpu, term_in, term_out, sense, &disk_controller);
+					}
+					if(cmd_switches & CLR_CMD)
+					{
+						printf("Clear\n");
 					}
 					if(cmd_switches & RUN_CMD)
 					{
+						// Set Bit in Bus State Run LED and Clear MI
+						bus_status |= RUNM;
+						bus_status &= ~(MI);
+
 						mode = RUN;
+					}
+					if(cmd_switches & PROTECT)
+					{
+					printf("Protect - Dump Registers\n");
+        			dump_regs(&cpu);
+					}
+					if(cmd_switches & UNPROTECT)
+					{
+					printf("Unprotect - Load Killbits\n");
+        			uint8_t killbits[] = { //killbits
+					0x21,0x00,0x00,
+					0x16,0x80,
+					0x01,0x00,0x20, //modified speed
+					0x1a,0x1a,0x1a,0x1a,
+					0x09,
+					0xd2,0x08,0x00,
+					0xdb,0xff,
+					0xaa,
+					0x0f,
+					0x57,
+					0xc3,0x08,0x00 
+					};
+					load_raw_data(killbits,sizeof(killbits),0);
 					}
 					if(cmd_switches & AUX1_UP)
 					{
@@ -259,7 +308,7 @@ int main(int argc, char *argv[])
 					if(cmd_switches & AUX1_DOWN)
 					{
 					printf("Aux1 Down: Load ROMs and Software");
-        				load_roms();
+        			load_roms();
 					// Mount diskette 1 (CP/M OS) and 2 (Tools)
 					disk_drive.disk1.fp = fopen("software/CPM2.2/cpm63k.dsk", "r+b");
 					disk_drive.disk1.fp = fopen("software/BASIC/Disk Basic Ver 300-5-F.dsk", "r+b");
@@ -272,6 +321,8 @@ int main(int argc, char *argv[])
 				{
 					if(cmd_switches & STOP_CMD)
 					{
+						// Clear Bit in Bus State Run LED
+						bus_status &= ~(RUNM);
 						mode = STOP;
 					}
 				}

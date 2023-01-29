@@ -8,9 +8,6 @@
 	#include <SPI.h>
 #endif
 #include "memory.h"
-#ifdef WIN32
-	#include <windows.h>
-#endif
 
 uint8_t get_parity(uint8_t val)
 {
@@ -50,7 +47,10 @@ int i8080_check_half_carry(uint16_t a, uint16_t b)
 }
 void i8080_mwrite(intel8080_t *cpu)
 {
-	{
+	{        
+		// Set the WO LED and Clear the MEMR bit
+    	bus_status |= WO;
+    	bus_status &= ~(MEMR);
 		write8(cpu->address_bus, cpu->data_bus);
 	}
 }
@@ -58,6 +58,11 @@ void i8080_mwrite(intel8080_t *cpu)
 void i8080_mread(intel8080_t *cpu)
 {
 	{
+		// Set the MEMR LED and Clear the WO bit
+        bus_status |= MEMR;
+        bus_status &= ~(WO);
+        
+		//Need to turn on MEMR LED here
 		cpu->data_bus = read8(cpu->address_bus);
 	}
 }
@@ -83,7 +88,10 @@ void i8080_pairwrite(intel8080_t *cpu, uint8_t pair, uint16_t val)
 
 uint16_t i8080_pairread(intel8080_t *cpu, uint8_t pair)
 {
-	switch(pair)
+    // Set the MEMR LED and Clear the WO bit
+    bus_status |= MEMR;
+    bus_status &= ~(WO);
+    switch(pair)
 	{
 	case PAIR_BC:
 		return cpu->registers.bc;
@@ -104,7 +112,10 @@ uint16_t i8080_pairread(intel8080_t *cpu, uint8_t pair)
 
 void i8080_regwrite(intel8080_t *cpu, uint8_t reg, uint8_t val)
 {
-	switch(reg)
+	// Set the WO LED and Clear the MEMR bit
+    bus_status |= WO;
+    bus_status &= ~(MEMR);
+    switch(reg)
 	{
 	case REGISTER_A:
 		cpu->registers.a = val;
@@ -672,6 +683,10 @@ uint8_t i8080_sphl(intel8080_t *cpu)
 
 uint8_t i8080_in(intel8080_t *cpu)
 {
+    // Bus State Set INP LED and clear IOUT, MI, WO
+	bus_status |= INP;
+	bus_status &= ~(IOUT + MI + WO);
+    
 	static uint8_t character = 0;
 	switch(read8(cpu->registers.pc+1))
 	{
@@ -681,6 +696,7 @@ uint8_t i8080_in(intel8080_t *cpu)
 	case 0x1:
 		cpu->registers.a = cpu->term_in();
 		break;
+	// Cassette Port case 0x06 and 0x07;
 	case 0x8:
 		cpu->registers.a = cpu->disk_controller.disk_status();
 		break;
@@ -712,33 +728,37 @@ uint8_t i8080_in(intel8080_t *cpu)
 			cpu->registers.a = cpu->term_in();
 		}
 		break;
+	// 
 	case 0xff: // Front panel switches
 		cpu->registers.a = cpu->sense();
 		break;
 	default:
 		cpu->registers.a = 0xff;
-		//printf("IN PORT %x\n", cpu->data_bus);
+		printf("IN PORT %x\n", cpu->data_bus);
 		break;
 	}
-
 	cpu->registers.pc+=2;
 	return CYCLES_IN;
 }
 
 uint8_t i8080_out(intel8080_t *cpu)
 {
+	// Bus State Set IOUT LED and clear INP, MI, WO
+	bus_status |= IOUT;
+	bus_status &= ~(INP + MI + WO);
+
 	switch(read8(cpu->registers.pc+1))
 	{
-	case 0x1:
+	case 0x01:
 		cpu->term_out(cpu->registers.a);
 		break;
-	case 0x8:
+	case 0x08:
 		cpu->disk_controller.disk_select(cpu->registers.a);
 		break;
-	case 0x9:
+	case 0x09:
 		cpu->disk_controller.disk_function(cpu->registers.a);
 		break;
-	case 0xa:
+	case 0x0A:
 		cpu->disk_controller.write(cpu->registers.a);
 		break;
 	case 0x10:  // 2SIO port 1 control
@@ -746,8 +766,11 @@ uint8_t i8080_out(intel8080_t *cpu)
 	case 0x11: // 2sio port 1 write
 		cpu->term_out(cpu->registers.a);
 		break;
+	case 0xFF: // panel LEDs
+		bus_status |= cpu->registers.a >> 12;
+		break;
 	default:
-		//printf("OUT PORT %x, DATA: %x\n", cpu->data_bus, cpu->registers.a);
+		printf("OUT PORT %x, DATA: %x\n", cpu->data_bus, cpu->registers.a);
 		break;
 	}
 	cpu->registers.pc+=2;
@@ -756,6 +779,7 @@ uint8_t i8080_out(intel8080_t *cpu)
 
 uint8_t i8080_push(intel8080_t *cpu)
 {
+	//Set STACK LED??
 	uint8_t pair = RP(cpu->current_op_code);
 	uint16_t val;
 
@@ -773,6 +797,7 @@ uint8_t i8080_push(intel8080_t *cpu)
 
 uint8_t i8080_pop(intel8080_t *cpu)
 {
+	//Set STACK LED??
 	uint8_t pair = RP(cpu->current_op_code);
 	uint16_t val = read16(cpu->registers.sp);
 	cpu->registers.sp+=2;

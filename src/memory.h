@@ -3,6 +3,10 @@
 
 #include "types.h"
 
+extern uint8_t cmd_switches;
+extern uint16_t bus_switches;
+extern uint16_t bus_status;
+
 #ifdef ARDUINO
 
 #include "../arduino/pins.h"
@@ -55,8 +59,6 @@ inline void write8(uint16_t address, uint8_t val)
 #else
 #include "pi_panel.h"
 extern uint8_t memory[64*1024];
-extern uint8_t cmd_switches;
-extern uint16_t bus_switches;
 
 uint8_t read8(uint16_t address)
 {
@@ -65,7 +67,6 @@ uint8_t read8(uint16_t address)
                 data =  memory[address];
 	else
 		data = 0;
-
         return data;
 }
 
@@ -82,7 +83,6 @@ inline uint16_t read16(uint16_t address)
         uint16_t result = 0;
         result = read8(address);
         result |= read8(address+1) << 8;
-
         return result;
 }
 
