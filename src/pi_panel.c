@@ -51,7 +51,7 @@ void read_write_panel(uint8_t status, uint8_t data, uint16_t bus, uint16_t *bus_
        // Take the latchPin low so the LEDs don't change while you're sending in bits:
         digitalWrite(LEDlPIN, LOW);
        // Now push data to 74HCT595s
-        shiftOut(LEDdPIN,LEDcPIN,MSBFIRST,status >> 8);
+        shiftOut(LEDdPIN,LEDcPIN,MSBFIRST,0xFF);
         shiftOut(LEDdPIN,LEDcPIN,MSBFIRST,bus >> 8 );
         shiftOut(LEDdPIN,LEDcPIN,MSBFIRST,bus);
         shiftOut(LEDdPIN,LEDcPIN,MSBFIRST,status);
