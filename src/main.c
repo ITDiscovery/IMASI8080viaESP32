@@ -143,9 +143,10 @@ int main(int argc, char *argv[])
 	uint16_t breakpoint = 0x0;
 	disk_controller_t disk_controller;
 	intel8080_t cpu;
+	uint32_t last_debounce = millis();
 
 	rpi_init();
-
+	
 	memset(memory, 0, 64*1024);
 	sock = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -162,16 +163,16 @@ int main(int argc, char *argv[])
 		printf("Could not bind\n");
 	}
 
-       //Need to remove the wait for the telnet connction
+	// Socket connect is not implemented correctly here to allow timeout
 	printf("Waiting for terminal on port 8800...\n");
-	do
-	{
-		listen(sock, 1);
-		sock_size = sizeof(client_addr);
-		client_sock = accept(sock, &client_addr, &sock_size);
-	}while(client_sock == -1);
-
-	printf("Got connection. %d\n", client_sock);
+	listen(sock, 1);
+	sock_size = sizeof(client_addr);
+	client_sock = accept(sock, &client_addr, &sock_size);
+	if (client_sock != -1){ 
+		printf("Got connection. %d\n", client_sock);
+	} else {
+		printf("Connection Timeout - Proceeding");
+	}
 
 	disk_controller.disk_function = disk_function;
 	disk_controller.disk_select = disk_select;
@@ -189,14 +190,13 @@ int main(int argc, char *argv[])
 	uint8_t cmd_state;
 	uint8_t last_cmd_state = 0;
 	uint8_t mode = STOP;
-	uint32_t last_debounce = 0;
-
+	
 	uint32_t cycle_counter = 0;
 
 	while(1)
 	{
-                //dump_regs(&cpu);
-                //printf("Cmd:%04x\tBus:%04x\n",cmd_switches,bus_switches);
+        dump_regs(&cpu);
+        //printf("Cmd:%04x\tBus:%04x\n",cmd_switches,bus_switches);
 		printf("Mode:%02x\n",mode);
 		if(mode == RUN)
 		{

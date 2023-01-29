@@ -1,11 +1,11 @@
-#include <pigpio.h>
+#include <wiringPi.h>
 
-#define LEDdPIN  16
-#define LEDlPIN  20
-#define LEDcPIN  21
-#define SWdPIN  19
-#define SWlPIN  13
-#define SWcPIN  26
+#define LEDdPIN  27
+#define LEDlPIN  28
+#define LEDcPIN  29
+#define SWdPIN  24
+#define SWlPIN  23
+#define SWcPIN  25
 #define MSBFIRST  1
 
 void shiftOut(uint8_t dpin,uint8_t cpin,uint8_t order,uint8_t idata) {
