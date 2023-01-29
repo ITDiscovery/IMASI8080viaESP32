@@ -7,7 +7,7 @@
 void shiftOut(uint8_t dpin,uint8_t cpin,uint8_t order,uint8_t idata) {
   //MSBOrder is 1 always for us,someday update this code to do either
   for(int i=7; i > -1; i--){
-    digitalWrite(cpin,HIGH);
+    digitalWrite(cpin,LOW);
     digitalWrite(dpin, (idata >> i) & 0x01 );
     digitalWrite(cpin,HIGH);
   }

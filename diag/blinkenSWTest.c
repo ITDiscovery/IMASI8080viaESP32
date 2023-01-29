@@ -1,49 +1,49 @@
-#include <pigpio.h>
+#include <stdint.h>
+#include <wiringPi.h>
 #include <stdbool.h>
 #include <stdio.h>
 
-#define LEDdPIN  16
-#define LEDlPIN  20
-#define LEDcPIN  21
-#define SWdPIN  19
-#define SWlPIN  13
-#define SWcPIN  26
+#define LEDdPIN  27
+#define LEDlPIN  28
+#define LEDcPIN  29
+#define SWdPIN  24
+#define SWlPIN  23
+#define SWcPIN  25
+#define lDelay 5
 #define MSBFIRST 1
-#define LSBFIRST 0
+
+void rpi_init()
+{
+	wiringPiSetup();
+	pinMode(LEDlPIN,OUTPUT);
+	pinMode(LEDlPIN,OUTPUT);
+	pinMode(LEDcPIN,OUTPUT);
+	pinMode(SWdPIN,INPUT);
+	pinMode(SWcPIN,OUTPUT);
+	pinMode(SWlPIN,OUTPUT);
+}
 
 void shiftOut(uint8_t dpin,uint8_t cpin,uint8_t order,uint8_t idata) {
-  //MSBOrder is 1 always for us
+  //MSBOrder is 1 always for us,someday update this code to do either
   for(int i=7; i > -1; i--){
-    gpioWrite(cpin,PI_LOW);
-    gpioWrite(dpin, (idata >> i) & 0x01 );
-    gpioWrite(cpin,PI_HIGH);
+    digitalWrite(cpin,LOW);
+    digitalWrite(dpin, (idata >> i) & 0x01 );
+    digitalWrite(cpin,HIGH);
   }
 }
 
 uint8_t shiftIn(uint8_t dpin,uint8_t cpin,uint8_t order) {
-    //LSBOrder is 0 always for us
+    //LSBOrder is 0 always for us, someday update this code to do either
     uint8_t retVal = 0;
     bool bitVal = 0;
     for(int i=0; i < 8; i++ ){
-        bitVal = gpioRead(dpin);
+        bitVal = digitalRead(dpin);
         retVal |= (bitVal << (7 - i));
-        gpioWrite(cpin,PI_HIGH);
-        gpioDelay(100);
-        gpioWrite(cpin,PI_LOW);
+        digitalWrite(cpin,HIGH);
+        delay(lDelay);
+        digitalWrite(cpin,LOW);
     }
     return retVal;
-}
-
-void rpi_init()
-{
-    gpioInitialise();     //Setup the library
-    gpioSetMode(LEDlPIN,PI_OUTPUT);
-    gpioSetMode(LEDlPIN,PI_OUTPUT);
-    gpioSetMode(LEDcPIN, PI_OUTPUT);
-    gpioSetMode(SWdPIN, PI_INPUT);
-    gpioSetMode(SWcPIN, PI_INPUT);
-    gpioSetMode(SWlPIN, PI_OUTPUT);
-
 }
 
 int main ()
@@ -58,26 +58,26 @@ int main ()
     while (1) {
         // Get Switches by shifting in from 74HCT165
         // Write Pulse to Latch Pin
-        gpioWrite(SWlPIN,PI_LOW);
-        gpioDelay(50);
-        gpioWrite(SWlPIN,PI_HIGH);
-        gpioDelay(50);
+        digitalWrite(SWlPIN,LOW);
+        delay(lDelay);
+        digitalWrite(SWlPIN,HIGH);
+        delay(lDelay);
         // Get Address Low, Address High, Control Low, Control High
-        bus_switches = shiftIn(SWdPIN,SWcPIN,LSBFIRST);
-        bus_switches = bus_switches + (shiftIn(SWdPIN,SWcPIN,LSBFIRST) << 8);
-        cmd_switches = shiftIn(SWdPIN,SWcPIN,LSBFIRST);
-        cmd_switches = cmd_switches + (shiftIn(SWdPIN,SWcPIN,LSBFIRST) << 8);
-        gpioWrite(SWlPIN ,PI_HIGH);
+        bus_switches = shiftIn(SWdPIN,SWcPIN,MSBFIRST);
+        bus_switches = bus_switches + (shiftIn(SWdPIN,SWcPIN,MSBFIRST) << 8);
+        cmd_switches = shiftIn(SWdPIN,SWcPIN,MSBFIRST);
+        cmd_switches = cmd_switches + (shiftIn(SWdPIN,SWcPIN,MSBFIRST) << 8);
+        //digitalWrite(SWlPIN ,HIGH);
         printf("Address: %x   Control: %x \n",bus_switches,cmd_switches);
 
         // Now push data to 74HC595
-        gpioWrite(LEDlPIN, PI_LOW);
+        digitalWrite(LEDlPIN, LOW);
         shiftOut(LEDdPIN,LEDcPIN,MSBFIRST,cmd_switches >> 8);
         shiftOut(LEDdPIN,LEDcPIN,MSBFIRST,bus_switches);
         shiftOut(LEDdPIN,LEDcPIN,MSBFIRST,bus_switches >> 8);
         shiftOut(LEDdPIN,LEDcPIN,MSBFIRST,cmd_switches);
         shiftOut(LEDdPIN,LEDcPIN,MSBFIRST,cmd_switches);
-        gpioWrite(LEDlPIN, PI_HIGH);
-        gpioDelay(50000);
+        digitalWrite(LEDlPIN, HIGH);
+        delay(lDelay);
     }
 }

@@ -8,7 +8,7 @@
         "name": "Remote GDB",
         "type": "cppdbg",
         "request": "launch",
-        "program": "/home/imasipi/Altair8800viaAVR",
+        "program": "/home/imasipi/Altair8800viaAVR/altair8800",
         "args": [],
         "stopAtEntry": true,
         "cwd": "/home/imasipi/Altair8800viaAVR",
