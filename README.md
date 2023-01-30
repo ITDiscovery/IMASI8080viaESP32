@@ -26,14 +26,14 @@ Bit 0 - 15
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | D0| D1| D2| D3| D4| D5| D6| D7|INT| WO|Stack|HLTA|OUT|M1|INP|MEMR|
 
-INT: Interupt request has been acknowledged.
-WO: Write to memory or output port.
-STACK: The address buss hold's the stack pointer.
-HLTA: A HALT instruction has been acknowledged.
-OUT: Out to port.
-M1: The CPU is performing the 1st cycle of the instruction.
-INP: In from port.
-MEMR: The memory bus is being used.
+- INT: Interupt request has been acknowledged.
+- WO: Write to memory or output port.
+- STACK: The address buss hold's the stack pointer.
+- HLTA: A HALT instruction has been acknowledged.
+- OUT: Out to port.
+- M1: The CPU is performing the 1st cycle of the instruction.
+- INP: In from port.
+- MEMR: The memory bus is being used.
 
 Bit 16 - 32
 | 16| 17| 18| 19| 20| 21| 22| 23| 24| 25| 26| 27| 28| 29| 30| 31|
@@ -45,11 +45,11 @@ Bit 32-39
 |---|---|---|---|---|---|---|---|
 |PROT|INTE|WAIT|HLDA|User1|User2|User3|User4|
 
-PROT: The memory is protected.
-INTE: An interupted has been generated.
-WAIT: CPU is in a WAIT state.
-HLDA: A Hold has been acknowledged.
-User4 - User1: Send 4 bits OUT to Port 0xFF 
+- PROT: The memory is protected.
+- INTE: An interupted has been generated.
+- WAIT: CPU is in a WAIT state.
+- HLDA: A Hold has been acknowledged.
+- User4 - User1: Send 4 bits OUT to Port 0xFF 
 
 
 Switch Data (PIN_PD5):
