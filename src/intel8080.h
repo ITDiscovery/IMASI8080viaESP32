@@ -97,5 +97,8 @@ void i8080_examine_next(intel8080_t *cpu);
 
 void i8080_cycle(intel8080_t *cpu);
 
+uint8_t read8(uint16_t address);
+void write8(uint16_t address, uint8_t val);
+uint16_t read16(uint16_t address);
 void write16(uint16_t address, uint16_t val);
 #endif

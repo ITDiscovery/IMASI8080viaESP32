@@ -57,6 +57,7 @@ inline void write8(uint16_t address, uint8_t val)
 }
 
 #else
+
 #include "pi_panel.h"
 extern uint8_t memory[64*1024];
 
@@ -76,9 +77,7 @@ void write8(uint16_t address, uint8_t val)
                 memory[address] = val;
 }
 
-#endif
-
-inline uint16_t read16(uint16_t address)
+uint16_t read16(uint16_t address)
 {
         uint16_t result = 0;
         result = read8(address);
@@ -86,10 +85,11 @@ inline uint16_t read16(uint16_t address)
         return result;
 }
 
-inline void write16(uint16_t address, uint16_t val)
+void write16(uint16_t address, uint16_t val)
 {
         write8(address, val & 0xff);
         write8(address+1, (val >> 8) & 0xff);
 }
 
+#endif
 #endif

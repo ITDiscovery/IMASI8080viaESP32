@@ -229,10 +229,6 @@ int main(int argc, char *argv[])
 				cmd_state = cmd_switches;
 				if(mode == STOP)
 				{
-					if(cmd_switches & STOP)
-					{
-						i8080_examine(&cpu, 0);
-					}
 					if(cmd_switches & EXAMINE)
 					{
 						i8080_examine(&cpu, bus_switches);
