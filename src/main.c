@@ -209,7 +209,7 @@ int main(int argc, char *argv[])
 		{
 			i8080_cycle(&cpu);
 			cycle_counter++;
-			if(cycle_counter % 10 == 0)
+			if(cycle_counter % 100 == 0)
 				read_write_panel(bus_status, cpu.data_bus, cpu.address_bus, &bus_switches, &cmd_switches, 1);
 		}
 		else
@@ -236,22 +236,22 @@ int main(int argc, char *argv[])
 					if(cmd_switches & EXAMINE)
 					{
 						i8080_examine(&cpu, bus_switches);
-						printf("Examine Address: %x  Data: %x\n",  cpu->address_bus, cpu->data_bus );
+						printf("Examine Address: %x  Data: %x\n",  cpu.address_bus, cpu.data_bus );
 					}
 					if(cmd_switches & EXAMINE_NEXT)
 					{
-						printf("Examine Next %x\n",);
-						i8080_examine_next(&cpu);
+						i8080_examine_next(&cpu);						
+						printf("Examine Address: %x  Data: %x\n",  cpu.address_bus, cpu.data_bus );
 					}
 					if(cmd_switches & DEPOSIT)
 					{
-						printf("Deposit %x\n", bus_switches);
 						i8080_deposit(&cpu, bus_switches & 0xff);
+						printf("Deposit Address: %x  Data: %x\n",  cpu.address_bus, cpu.data_bus );
 					}
 					if(cmd_switches & DEPOSIT_NEXT)
 					{
-						printf("Deposit Next %x\n", &cpu);
 						i8080_deposit_next(&cpu, bus_switches & 0xff);
+						printf("Deposit Next Address: %x  Data: %x\n",  cpu.address_bus, cpu.data_bus );
 					}
 					if(cmd_switches & RESET_CMD)
 					{
@@ -272,10 +272,10 @@ int main(int argc, char *argv[])
 					}
 					if(cmd_switches & SINGLE_STEP)
 					{
-						printf("Single Step at %x\n", bus_switches);
 						bus_status |= MI;
-						read_write_panel(bus_status, cpu.data_bus, cpu.address_bus, &bus_switches, &cmd_switches, 1);
+						//printf("Single Step at %x\n",cpu.address_bus );
 						i8080_cycle(&cpu);
+        				dump_regs(&cpu);
 					}
 					if(cmd_switches & PROTECT)
 					{
@@ -286,7 +286,7 @@ int main(int argc, char *argv[])
 					{
 					printf("Unprotect - Load Killbits\n");
         			uint8_t killbits[] = { //killbits
-					0x21,0x00,0x00,
+					0x00,0x21,0x00,0x00,
 					0x16,0x80,
 					0x01,0x00,0x20, //modified speed
 					0x1a,0x1a,0x1a,0x1a,
@@ -296,18 +296,18 @@ int main(int argc, char *argv[])
 					0xaa,
 					0x0f,
 					0x57,
-					0xc3,0x08,0x00 
+					0xc3,0x09,0x00 
 					};
 					load_raw_data(killbits,sizeof(killbits),0);
 					}
 					if(cmd_switches & AUX1_UP)
 					{
-					printf("Aux1 Up: Load ROMs");
+					printf("Aux1 Up: Load ROMs\n");
         				load_roms();
 					}
 					if(cmd_switches & AUX1_DOWN)
 					{
-					printf("Aux1 Down: Load ROMs and Software");
+					printf("Aux1 Down: Load ROMs and Software\n");
         			load_roms();
 					// Mount diskette 1 (CP/M OS) and 2 (Tools)
 					disk_drive.disk1.fp = fopen("software/CPM2.2/cpm63k.dsk", "r+b");
