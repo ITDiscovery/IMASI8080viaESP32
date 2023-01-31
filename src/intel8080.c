@@ -19,6 +19,9 @@ uint8_t get_parity(uint8_t val)
 void i8080_reset(intel8080_t *cpu, port_in in, port_out out, read_sense_switches sense,
                         disk_controller_t *disk_controller)
 {
+    // Clear Bus State
+    bus_status = 0xF000;
+	
 	memset(cpu, 0, sizeof(intel8080_t));
 	cpu->term_in = in;
 	cpu->term_out = out;
@@ -48,9 +51,9 @@ int i8080_check_half_carry(uint16_t a, uint16_t b)
 void i8080_mwrite(intel8080_t *cpu)
 {
 	{        
-		// Set the WO LED and Clear the MEMR bit
-    	bus_status |= WO;
-    	bus_status &= ~(MEMR);
+		// Set the MEMR, WO and clear INP, OUT
+    	bus_status |= (WO + MEMR);
+    	bus_status &= ~(IOUT + INP);
 		write8(cpu->address_bus, cpu->data_bus);
 	}
 }
@@ -58,17 +61,20 @@ void i8080_mwrite(intel8080_t *cpu)
 void i8080_mread(intel8080_t *cpu)
 {
 	{
-		// Set the MEMR LED and Clear the WO bit
+		// Set the MEMR LED and Clear the WO, INP, OUT bit
         bus_status |= MEMR;
-        bus_status &= ~(WO);
+        bus_status &= ~(WO + INP + IOUT);
         
-		//Need to turn on MEMR LED here
 		cpu->data_bus = read8(cpu->address_bus);
 	}
 }
 
 void i8080_pairwrite(intel8080_t *cpu, uint8_t pair, uint16_t val)
 {
+	// Set the WO,MEMR and Clear the INP, OUT bit
+    bus_status |= (WO + MEMR);
+    bus_status &= ~(INP + IOUT);
+
 	switch(pair)
 	{
 	case PAIR_BC:
@@ -88,9 +94,10 @@ void i8080_pairwrite(intel8080_t *cpu, uint8_t pair, uint16_t val)
 
 uint16_t i8080_pairread(intel8080_t *cpu, uint8_t pair)
 {
-    // Set the MEMR LED and Clear the WO bit
+    // Set the MEMR LED and Clear the WO, INP, OUT bit
     bus_status |= MEMR;
-    bus_status &= ~(WO);
+    bus_status &= ~(WO + INP + IOUT);
+
     switch(pair)
 	{
 	case PAIR_BC:
@@ -112,8 +119,7 @@ uint16_t i8080_pairread(intel8080_t *cpu, uint8_t pair)
 
 void i8080_regwrite(intel8080_t *cpu, uint8_t reg, uint8_t val)
 {
-	// Set the WO LED and Clear the MEMR bit
-    bus_status |= WO;
+	// Clear the MEMR bit
     bus_status &= ~(MEMR);
     switch(reg)
 	{
@@ -147,6 +153,8 @@ void i8080_regwrite(intel8080_t *cpu, uint8_t reg, uint8_t val)
 
 uint8_t i8080_regread(intel8080_t *cpu, uint8_t reg)
 {
+	// Clear the MEMR bit
+    bus_status &= ~(MEMR);
 	switch(reg)
 	{
 	case REGISTER_A:
@@ -683,9 +691,9 @@ uint8_t i8080_sphl(intel8080_t *cpu)
 
 uint8_t i8080_in(intel8080_t *cpu)
 {
-    // Bus State Set INP LED and clear IOUT, MI, WO
+    // Bus State Set INP LED and clear IOUT, MEMR
 	bus_status |= INP;
-	bus_status &= ~(IOUT + MI + WO);
+	bus_status &= ~(IOUT + MEMR);
     
 	static uint8_t character = 0;
 	switch(read8(cpu->registers.pc+1))
@@ -743,9 +751,9 @@ uint8_t i8080_in(intel8080_t *cpu)
 
 uint8_t i8080_out(intel8080_t *cpu)
 {
-	// Bus State Set IOUT LED and clear INP, MI, WO
-	bus_status |= IOUT;
-	bus_status &= ~(INP + MI + WO);
+	// Bus State Set IOUT and WO and clear INP and MEMR
+	bus_status |= (IOUT);
+	bus_status &= ~(INP + MEMR + WO);
 
 	switch(read8(cpu->registers.pc+1))
 	{

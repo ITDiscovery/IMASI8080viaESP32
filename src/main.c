@@ -233,21 +233,14 @@ int main(int argc, char *argv[])
 					{
 						i8080_examine(&cpu, 0);
 					}
-					if(cmd_switches & SINGLE_STEP)
-					{
-						printf("Single Step at %x\n", bus_switches);
-						bus_status |= MI;
-						read_write_panel(bus_status, cpu.data_bus, cpu.address_bus, &bus_switches, &cmd_switches, 1);
-						i8080_cycle(&cpu);
-					}
 					if(cmd_switches & EXAMINE)
 					{
-						printf("Examine %x\n", bus_switches);
 						i8080_examine(&cpu, bus_switches);
+						printf("Examine Address: %x  Data: %x\n",  cpu->address_bus, cpu->data_bus );
 					}
 					if(cmd_switches & EXAMINE_NEXT)
 					{
-						printf("Examine Next %x\n", bus_switches);
+						printf("Examine Next %x\n",);
 						i8080_examine_next(&cpu);
 					}
 					if(cmd_switches & DEPOSIT)
@@ -257,8 +250,8 @@ int main(int argc, char *argv[])
 					}
 					if(cmd_switches & DEPOSIT_NEXT)
 					{
-						printf("Deposit Next %x\n", bus_switches);
-						i8080_deposit(&cpu, bus_switches & 0xff);
+						printf("Deposit Next %x\n", &cpu);
+						i8080_deposit_next(&cpu, bus_switches & 0xff);
 					}
 					if(cmd_switches & RESET_CMD)
 					{
@@ -276,6 +269,13 @@ int main(int argc, char *argv[])
 						bus_status &= ~(MI);
 
 						mode = RUN;
+					}
+					if(cmd_switches & SINGLE_STEP)
+					{
+						printf("Single Step at %x\n", bus_switches);
+						bus_status |= MI;
+						read_write_panel(bus_status, cpu.data_bus, cpu.address_bus, &bus_switches, &cmd_switches, 1);
+						i8080_cycle(&cpu);
 					}
 					if(cmd_switches & PROTECT)
 					{
