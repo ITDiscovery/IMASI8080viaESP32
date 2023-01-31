@@ -13,7 +13,6 @@ Had to dump the idea of using AVR128DB28 Flash...newly posted specs show only a 
 RevA boards would need too many mods.
 RevB boards will need to a mod to go from Pin 1 of U2 to Pin 24 of H3.
 
-
 3D Printer Toggle Paddles, Switch and LED Mounts:
 https://www.thingiverse.com/thing:5627711
 
@@ -24,7 +23,24 @@ LED Data (PIN_PD2):
 Bit 0 - 15
 | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10| 11| 12| 13| 14| 15| 
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| D0| D1| D2| D3| D4| D5| D6| D7|INT| WO|Stack|HLTA|OUT|IN|INP|MEMR|
+| D0| D1| D2| D3| D4| D5| D6| D7|INT| WO|Stack|HLTA|OUT|M1|INP|MEMR|
+
+- INTA: Interupt request has been acknowledged (not implemented)
+- WO: Write to memory or output port.
+  - Implemented by setting bus_state.WO in i8080_out, i8080_mwrite, i8080_pairwrite
+  - Implemented by clearing bus_state.WO in i8080_in, i8080_mread, i8080_pairread
+- STACK: The address buss hold's the stack pointer (not implemented)
+- HLTA: A HALT instruction has been acknowledged (not implemented)
+- OUT: Out to port
+  - Implemented by setting bus_state.OUT in intel8080_out
+  - Implemented by clearing bus_stat.OUT in intel8080_in, i8080_mwrite, i8080_mread
+- M1: The CPU is performing the 1st cycle of the instruction (not implemented)
+- INP: In from port.
+  - Implemented by setting bus_state.INP in intel8080_in
+  - Implemented by clearing bus_stat.INP in intel8080_out, i8080_mwrite, i8080_mread
+- MEMR: The memory bus is being used.
+  - Implemented by setting bus_state.MEMR in i8080_mwrite, i8080mread
+  - Implemented by clearing bus_state.MEMR in i8080_in, i8080_out 
 
 Bit 16 - 32
 | 16| 17| 18| 19| 20| 21| 22| 23| 24| 25| 26| 27| 28| 29| 30| 31|
@@ -35,6 +51,16 @@ Bit 32-39
 | 32| 33| 34| 35| 36| 37| 38| 39|
 |---|---|---|---|---|---|---|---|
 |PROT|INTE|WAIT|HLDA|User1|User2|User3|User4|
+
+- PROT: The memory is protected (not implemented)
+- INTE: An interupted has been generated
+   - Implemented by setting bus_state.INTE on i8080_ei
+   - Implemented by clearing bus_state.INTE on i8080_di
+- WAIT: CPU is in a WAIT state (not implemented)
+- HLDA/RUN: A Hold has been acknowledged.
+  - Implemented by clearing the bus_state.HLDA on i8080_HLT
+  - Implemented by setting the bus_state.HLDA on Run Mode
+- User4 - User1: Send 4 bits OUT to Port 0xFF 
 
 Switch Data (PIN_PD5):
 
@@ -99,6 +125,15 @@ H2 (Switch) Connections:
 |H2-37 |+5V|H2-38 |Gnd|
 |H2-39 |+5V|H2-40 |Gnd|
 
+Note: Implementing "new" hardware is via i8080_in and i8080_out which has a switch/case based on the port number.
+Currently Implemented:
+
+Port 0x00 in: Sends back 0x00
+Port 0x01: term_in/term_out in main.c
+Port 0x06 and 0x07: Cassette Port (not implemented)
+Port 0x08,0x09,0x0A: Disk Controller
+Port 0x10,0x11: 2SIO Port 1 (needs to go to sockets, not serial) 
+
 Update: Dumped the TM1638, as it had trouble dealing with more than a few switches on at the same time, especially with 7-Segments
 connected. 
 
@@ -117,6 +152,8 @@ https://github.com/companje/Altair8800
 Rasperry Pi Note:
 Big problems with a C++ library for GPIO, due to trolls annoying the original author. Here's how to install wiringPi:
 
+```
 git clone https://github.com/WiringPi/WiringPi.git
 cd WiringPi
 ./build
+```
