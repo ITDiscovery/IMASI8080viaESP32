@@ -5,7 +5,7 @@
 #endif
 #include "88dcdd.h"
 
-//#define DISK_DEBUG
+#define DISK_DEBUG
 
 disks disk_drive;
 

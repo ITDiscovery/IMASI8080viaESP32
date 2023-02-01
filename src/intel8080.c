@@ -778,7 +778,7 @@ uint8_t i8080_out(intel8080_t *cpu)
 		bus_status |= cpu->registers.a >> 12;
 		break;
 	default:
-		printf("OUT PORT %x, DATA: %x\n", cpu->data_bus, cpu->registers.a);
+		printf("OUT PORT %x, DATA: %x\n", cpu->registers.pc+1, cpu->registers.a);
 		break;
 	}
 	cpu->registers.pc+=2;
