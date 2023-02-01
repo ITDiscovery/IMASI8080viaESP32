@@ -755,6 +755,7 @@ uint8_t i8080_out(intel8080_t *cpu)
 	bus_status |= (IOUT);
 	bus_status &= ~(INP + MEMR + WO);
 
+    uint8_t ioport = read8(cpu->registers.pc+1);
 	switch(read8(cpu->registers.pc+1))
 	{
 	case 0x01:
@@ -774,11 +775,17 @@ uint8_t i8080_out(intel8080_t *cpu)
 	case 0x11: // 2sio port 1 write
 		cpu->term_out(cpu->registers.a);
 		break;
+	case 0x22:
+		printf("Out Port: 0x22 Data: %x\n",cpu->registers.a);
+		break;	
+	case 0x23:
+		printf("Out Port: 0x23 Data: %x\n",cpu->registers.a);
+		break;	
 	case 0xFF: // panel LEDs
 		bus_status |= cpu->registers.a >> 12;
 		break;
 	default:
-		printf("OUT PORT %x, DATA: %x\n", cpu->registers.pc+1, cpu->registers.a);
+		printf("OUT PORT %x, DATA: %x\n", ioport, cpu->registers.a);
 		break;
 	}
 	cpu->registers.pc+=2;

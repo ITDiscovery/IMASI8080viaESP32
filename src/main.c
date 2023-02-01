@@ -211,6 +211,7 @@ int main(int argc, char *argv[])
 			cycle_counter++;
 			if(cycle_counter % 100 == 0)
 				read_write_panel(bus_status, cpu.data_bus, cpu.address_bus, &bus_switches, &cmd_switches, 1);
+				cycle_counter = 0;
 		}
 		else
 		{
@@ -298,19 +299,20 @@ int main(int argc, char *argv[])
 					}
 					if(cmd_switches & AUX1_UP)
 					{
-					printf("Aux1 Up: Load ROMs\n");
+						printf("Aux1 Up: Load ROMs\n");
         				load_roms();
+						i8080_examine(&cpu, 0xff00);
 					}
 					if(cmd_switches & AUX1_DOWN)
 					{
-					printf("Aux1 Down: Load ROMs and Software\n");
-        			load_roms();
-					// Mount diskette 1 (CP/M OS) and 2 (Tools)
-					disk_drive.disk1.fp = fopen("software/CPM2.2/cpm63k.dsk", "r+b");
-					disk_drive.disk1.fp = fopen("software/BASIC/Disk Basic Ver 300-5-F.dsk", "r+b");
-					disk_drive.disk2.fp = fopen("software/CPM2.2/zork.dsk", "r+b");
-					disk_drive.disk2.fp = fopen("software/BASIC/Floppy Disk/Games on 300-5-F.dsk", "r+b");
-					// Do an examine to 0xff00
+						printf("Aux1 Down: Load ROMs and Software\n");
+        				load_roms();
+						// Mount diskette 1 (CP/M OS) and 2 (Tools)
+						disk_drive.disk1.fp = fopen("software/CPM2.2/cpm63k.dsk", "r+b");
+						disk_drive.disk1.fp = fopen("software/BASIC/Disk Basic Ver 300-5-F.dsk", "r+b");
+						disk_drive.disk2.fp = fopen("software/CPM2.2/zork.dsk", "r+b");
+						disk_drive.disk2.fp = fopen("software/BASIC/Floppy Disk/Games on 300-5-F.dsk", "r+b");
+						i8080_examine(&cpu, 0xff00);
 					}
 				}
 				if(mode == RUN)
