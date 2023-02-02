@@ -71,6 +71,7 @@ void disk_function(uint8_t b)
 #ifdef ARDUINO
 		disk_drive.current->fp.seek(TRACK * disk_drive.current->track);
 #else
+		printf("74 - Disk file %s\n", disk_drive.current->fp);
 		fseek(disk_drive.current->fp, TRACK * disk_drive.current->track, SEEK_SET);
 #endif
 
@@ -92,6 +93,7 @@ void disk_function(uint8_t b)
 #ifdef ARDUINO
 		disk_drive.current->fp.seek(TRACK * disk_drive.current->track);
 #else
+		printf("96 - Disk file %s\n", disk_drive.current->fp);
 		fseek(disk_drive.current->fp, TRACK * disk_drive.current->track, SEEK_SET);
 #endif
 #ifdef DISK_DEBUG
@@ -142,6 +144,7 @@ uint8_t sector()
 #ifdef ARDUINO
 	disk_drive.current->fp.seek(seek);
 #else
+	printf("147 - Disk file %s\n", disk_drive.current->fp);
 	fseek(disk_drive.current->fp, seek, SEEK_SET);
 #endif
 

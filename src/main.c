@@ -209,9 +209,8 @@ int main(int argc, char *argv[])
 		{
 			i8080_cycle(&cpu);
 			cycle_counter++;
-			if(cycle_counter % 100 == 0)
+			if(cycle_counter % 50 == 0)
 				read_write_panel(bus_status, cpu.data_bus, cpu.address_bus, &bus_switches, &cmd_switches, 1);
-				cycle_counter = 0;
 		}
 		else
 		{
@@ -264,7 +263,7 @@ int main(int argc, char *argv[])
 						// Set Bit in Bus State Run LED and Clear MI
 						bus_status |= RUNM;
 						bus_status &= ~(MI);
-
+						printf("Run at %x\n",cpu.address_bus);
 						mode = RUN;
 					}
 					if(cmd_switches & SINGLE_STEP)
@@ -299,19 +298,16 @@ int main(int argc, char *argv[])
 					}
 					if(cmd_switches & AUX1_UP)
 					{
-						printf("Aux1 Up: Load ROMs\n");
-        				load_roms();
-						i8080_examine(&cpu, 0xff00);
+						printf("Aux1 Up\n");
 					}
 					if(cmd_switches & AUX1_DOWN)
 					{
 						printf("Aux1 Down: Load ROMs and Software\n");
-        				load_roms();
-						// Mount diskette 1 (CP/M OS) and 2 (Tools)
-						disk_drive.disk1.fp = fopen("software/CPM2.2/cpm63k.dsk", "r+b");
-						disk_drive.disk1.fp = fopen("software/BASIC/Disk Basic Ver 300-5-F.dsk", "r+b");
+        				load_mem_file("software/ROMs/88dskrom.bin", 0xff00);
+						// Mount diskette 1 (CP/M OS) and 2 (Games)
+						disk_drive.disk1.fp = fopen("software/Burcon/cpm.dsk","r+b");
+						//disk_drive.disk1.fp = fopen("software/CPM2.2/cpm63k.dsk", "r+b");
 						disk_drive.disk2.fp = fopen("software/CPM2.2/zork.dsk", "r+b");
-						disk_drive.disk2.fp = fopen("software/BASIC/Floppy Disk/Games on 300-5-F.dsk", "r+b");
 						i8080_examine(&cpu, 0xff00);
 					}
 				}
