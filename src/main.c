@@ -210,6 +210,7 @@ int main(int argc, char *argv[])
 			i8080_cycle(&cpu);
 			cycle_counter++;
 			if(cycle_counter % 50 == 0)
+				//Really only want to figure out bus_status when displaying
 				read_write_panel(bus_status, cpu.data_bus, cpu.address_bus, &bus_switches, &cmd_switches, 1);
 		}
 		else
@@ -298,7 +299,12 @@ int main(int argc, char *argv[])
 					}
 					if(cmd_switches & AUX1_UP)
 					{
-						printf("Aux1 Up\n");
+						printf("Aux1 Down: Load ROMs and Software\n");
+        				load_mem_file("software/ROMs/88dskrom.bin", 0xff00);
+						// Mount diskette 1 (CP/M OS) and 2 (Games)
+						disk_drive.disk1.fp = fopen("software/Burcon/cpm.dsk","r+b");
+						disk_drive.disk2.fp = fopen("software/Burcon/games.dsk","r+b");
+						i8080_examine(&cpu, 0xff00);
 					}
 					if(cmd_switches & AUX1_DOWN)
 					{
@@ -306,11 +312,10 @@ int main(int argc, char *argv[])
         				load_mem_file("software/ROMs/88dskrom.bin", 0xff00);
 						// Mount diskette 1 (CP/M OS) and 2 (Games)
 						disk_drive.disk1.fp = fopen("software/Burcon/cpm.dsk","r+b");
-						//disk_drive.disk1.fp = fopen("software/CPM2.2/cpm63k.dsk", "r+b");
-						disk_drive.disk2.fp = fopen("software/CPM2.2/zork.dsk", "r+b");
+						disk_drive.disk2.fp = fopen("software/Burcon/application.dsk", "r+b");
 						i8080_examine(&cpu, 0xff00);
 					}
-				}
+ 				}
 				if(mode == RUN)
 				{
 					if(cmd_switches & STOP_CMD)

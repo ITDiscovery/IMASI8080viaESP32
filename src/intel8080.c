@@ -52,8 +52,8 @@ void i8080_mwrite(intel8080_t *cpu)
 {
 	{        
 		// Set the MEMR, WO and clear INP, OUT
-    	bus_status |= (WO + MEMR);
-    	bus_status &= ~(IOUT + INP);
+    	//bus_status |= (WO + MEMR);
+    	//bus_status &= ~(IOUT + INP);
 		write8(cpu->address_bus, cpu->data_bus);
 	}
 }
@@ -62,8 +62,8 @@ void i8080_mread(intel8080_t *cpu)
 {
 	{
 		// Set the MEMR LED and Clear the WO, INP, OUT bit
-        bus_status |= MEMR;
-        bus_status &= ~(WO + INP + IOUT);
+        //bus_status |= MEMR;
+        //bus_status &= ~(WO + INP + IOUT);
         
 		cpu->data_bus = read8(cpu->address_bus);
 	}
@@ -72,8 +72,8 @@ void i8080_mread(intel8080_t *cpu)
 void i8080_pairwrite(intel8080_t *cpu, uint8_t pair, uint16_t val)
 {
 	// Set the WO,MEMR and Clear the INP, OUT bit
-    bus_status |= (WO + MEMR);
-    bus_status &= ~(INP + IOUT);
+    //bus_status |= (WO + MEMR);
+    //bus_status &= ~(INP + IOUT);
 
 	switch(pair)
 	{
@@ -95,8 +95,8 @@ void i8080_pairwrite(intel8080_t *cpu, uint8_t pair, uint16_t val)
 uint16_t i8080_pairread(intel8080_t *cpu, uint8_t pair)
 {
     // Set the MEMR LED and Clear the WO, INP, OUT bit
-    bus_status |= MEMR;
-    bus_status &= ~(WO + INP + IOUT);
+    //bus_status |= MEMR;
+    //bus_status &= ~(WO + INP + IOUT);
 
     switch(pair)
 	{
@@ -736,7 +736,7 @@ uint8_t i8080_in(intel8080_t *cpu)
 			cpu->registers.a = cpu->term_in();
 		}
 		break;
-	// 
+	//case 0x12 -2SIO port 2??
 	case 0xff: // Front panel switches
 		cpu->registers.a = cpu->sense();
 		break;

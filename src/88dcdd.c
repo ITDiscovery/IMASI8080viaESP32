@@ -144,7 +144,6 @@ uint8_t sector()
 #else
 	fseek(disk_drive.current->fp, seek, SEEK_SET);
 #endif
-
 	ret_val = disk_drive.current->sector << 1;
 #ifdef DISK_DEBUG  
 #ifdef ARDUINO
