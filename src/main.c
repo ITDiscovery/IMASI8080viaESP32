@@ -3,12 +3,6 @@
 #include "intel8080.h"
 #include "88dcdd.h"
 
-	// Serial
-#include <fcntl.h>
-#include <errno.h>
-#include <termios.h>
-//#include <unistd.h>
-
 #define SOCKET
 #ifdef SOCKET
 #include <sys/types.h>
@@ -23,6 +17,7 @@
 #include <string.h>
 #include "pi_panel.h"
 #include <wiringPi.h>
+#include <wiringSerial.h>
 
 int sock;
 int client_sock;
@@ -179,6 +174,7 @@ int main(int argc, char *argv[])
 	char yes = 1;
 	struct sockaddr_in listen_addr;
 	struct sockaddr client_addr;
+	int serialfd;
 	int sock_size;
 	uint16_t breakpoint = 0x0;
 	bus_status = 0xF000;
@@ -189,11 +185,16 @@ int main(int argc, char *argv[])
 	rpi_init();
 	
 	memset(memory, 0, 64*1024);
-	sock = socket(AF_INET, SOCK_STREAM, 0);
 
+	if ((serialfd = serialOpen ("/dev/serial0", 9600)) < 0)
+  	{
+    	fprintf (stderr, "Unable to open serial0.\n") ;
+	}
+
+	#ifdef SOCKET
+	sock = socket(AF_INET, SOCK_STREAM, 0);
 	setsockopt(sock, SOL_SOCKET, SO_LINGER, &yes, sizeof(char));
 	setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));
-
 	listen_addr.sin_family = AF_INET;
 	listen_addr.sin_addr.s_addr = INADDR_ANY;
 	listen_addr.sin_port = htons(8800);
@@ -214,6 +215,8 @@ int main(int argc, char *argv[])
 	} else {
 		printf("Connection Timeout - Proceeding");
 	}
+
+	#endif
 
 	disk_controller.disk_function = disk_function;
 	disk_controller.disk_select = disk_select;
