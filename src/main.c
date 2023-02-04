@@ -2,13 +2,22 @@
 #include <stdlib.h>
 #include "intel8080.h"
 #include "88dcdd.h"
-	// socket
+
+	// Serial
+#include <fcntl.h>
+#include <errno.h>
+#include <termios.h>
+//#include <unistd.h>
+
+#define SOCKET
+#ifdef SOCKET
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netinet/ip.h>
 #include <sys/ioctl.h>
 #include <fcntl.h>
+#endif
 
 	// strcat
 #include <string.h>
@@ -24,6 +33,27 @@ void dump_regs(intel8080_t *cpu)
 }
 
 // IO Table is found in intel8080_out and intel8080_in
+uint8_t sock_in()
+{
+	uint8_t b;
+
+	if(recv(client_sock, (char*)&b, 1, 0) != 1)
+	{
+		return 0;
+	}
+	else
+	{
+		return b;
+	}
+}
+
+void sock_out(uint8_t b)
+{
+	b = b & 0x7f;
+	send(client_sock, (char*)&b, 1, 0);
+}
+
+
 
 uint8_t term_in()
 {
@@ -303,7 +333,7 @@ int main(int argc, char *argv[])
         				load_mem_file("software/ROMs/88dskrom.bin", 0xff00);
 						// Mount diskette 1 (CP/M OS) and 2 (Games)
 						disk_drive.disk1.fp = fopen("software/Burcon/cpm.dsk","r+b");
-						disk_drive.disk2.fp = fopen("software/Burcon/games.dsk","r+b");
+						disk_drive.disk2.fp = fopen("software/Burcon/sysgen.dsk","r+b");
 						i8080_examine(&cpu, 0xff00);
 					}
 					if(cmd_switches & AUX1_DOWN)

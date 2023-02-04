@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS= -I. $(OPTFLAGS)
+CFLAGS=-g -I. $(OPTFLAGS)
 LIBS=$(OPTLIBS)
 SOURCES=$(wildcard src/**/*.c src/*.c)
 OBJECTS=$(patsubst %.c,%.o,$(SOURCES))

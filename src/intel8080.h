@@ -75,11 +75,8 @@ typedef struct
 {
 	uint8_t data_bus;
 	uint16_t address_bus;
-
 	uint8_t current_op_code;
-
 	registers_t registers;
-
 	port_in term_in;
 	port_out term_out;
 	read_sense_switches sense;

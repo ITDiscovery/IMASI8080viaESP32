@@ -705,6 +705,10 @@ uint8_t i8080_in(intel8080_t *cpu)
 		cpu->registers.a = cpu->term_in();
 		break;
 	// Cassette Port case 0x06 and 0x07;
+	case 0x06: // 88-ACR Board Cassette
+		printf("Cassette Port In 0x06, Data: %x\n",cpu->registers.a);
+	case 0x07: // 88-ACR Board Cassette
+		printf("Cassette Port In 0x07, Data: %x\n",cpu->registers.a);
 	case 0x8:
 		cpu->registers.a = cpu->disk_controller.disk_status();
 		break;
@@ -714,10 +718,11 @@ uint8_t i8080_in(intel8080_t *cpu)
 	case 0xa:
 		cpu->registers.a = cpu->disk_controller.read();
 		break;
-	case 0x10: // 2SIO port 1, status
+	case 0x10: // 88-2SIO or 88-ACR port 1, status
 		cpu->registers.a = 0x2; // bit 1 == transmit buffer empty
 		if(!character)
 		{
+			// character = sock();
 			character = cpu->term_in();
 		}
 		if(character)
@@ -725,7 +730,7 @@ uint8_t i8080_in(intel8080_t *cpu)
 			cpu->registers.a |= 0x1;
 		}
 		break;
-	case 0x11: // 2SIO port 1, read
+	case 0x11: // 88-2SIO or 88-ACR port 1, read
 		if(character)
 		{
 			cpu->registers.a = character;
@@ -736,7 +741,23 @@ uint8_t i8080_in(intel8080_t *cpu)
 			cpu->registers.a = cpu->term_in();
 		}
 		break;
-	//case 0x12 -2SIO port 2??
+	case 0x12:
+			if(character)
+		{
+			cpu->registers.a = character;
+			character = 0;
+		}
+		else
+		{
+			cpu->registers.a = cpu->term_in();
+		}
+		break;
+	case 0x18: // 88-ACR Board I/O 2ndary
+		printf("Cassette Port In 0x06, Data: %x\n",cpu->registers.a);
+	case 0x19: // 88-ACR Board I/O 2ndary
+		printf("Cassette Port In 0x07, Data: %x\n",cpu->registers.a);
+	case 0xfe:
+		printf("88-VI/RTC In, Data: %x\n",cpu->registers.a);
 	case 0xff: // Front panel switches
 		cpu->registers.a = cpu->sense();
 		break;
@@ -761,6 +782,10 @@ uint8_t i8080_out(intel8080_t *cpu)
 	case 0x01:
 		cpu->term_out(cpu->registers.a);
 		break;
+	case 0x06: // 88-ACR Board Cassette
+		printf("Cassette Port Out 0x06, Data: %x\n",cpu->registers.a);
+	case 0x07: // 88-ACR Board Cassette
+		printf("Cassette Port Out 0x07, Data: %x\n",cpu->registers.a);
 	case 0x08:
 		cpu->disk_controller.disk_select(cpu->registers.a);
 		break;
@@ -773,14 +798,20 @@ uint8_t i8080_out(intel8080_t *cpu)
 	case 0x10:  // 2SIO port 1 control
 		break;
 	case 0x11: // 2sio port 1 write
+		// sock_out(cpu->registers.a);
 		cpu->term_out(cpu->registers.a);
+		break;
+	case 0x12: // 2SUI Port 2 Write
+		// sock_out(cpu->registers.a);
 		break;
 	case 0x22:
 		printf("Out Port: 0x22 Data: %x\n",cpu->registers.a);
 		break;	
 	case 0x23:
 		printf("Out Port: 0x23 Data: %x\n",cpu->registers.a);
-		break;	
+		break;
+	case 0xfe:
+		printf("88-VI/RTC Out, Data: %x\n",cpu->registers.a);
 	case 0xFF: // panel LEDs
 		bus_status |= cpu->registers.a >> 12;
 		break;
