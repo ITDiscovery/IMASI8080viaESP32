@@ -71,7 +71,7 @@ void disk_function(uint8_t b)
 #ifdef ARDUINO
 		disk_drive.current->fp.seek(TRACK * disk_drive.current->track);
 #else
-		fseek(disk_drive.current->fp, TRACK * disk_drive.current->track, SEEK_SET);
+		fseek(disk_drive.current->diskfp, TRACK * disk_drive.current->track, SEEK_SET);
 #endif
 
 #ifdef DISK_DEBUG
@@ -92,7 +92,7 @@ void disk_function(uint8_t b)
 #ifdef ARDUINO
 		disk_drive.current->fp.seek(TRACK * disk_drive.current->track);
 #else
-		fseek(disk_drive.current->fp, TRACK * disk_drive.current->track, SEEK_SET);
+		fseek(disk_drive.current->diskfp, TRACK * disk_drive.current->track, SEEK_SET);
 #endif
 #ifdef DISK_DEBUG
 #ifdef ARDUINO
@@ -142,7 +142,7 @@ uint8_t sector()
 #ifdef ARDUINO
 	disk_drive.current->fp.seek(seek);
 #else
-	fseek(disk_drive.current->fp, seek, SEEK_SET);
+	fseek(disk_drive.current->diskfp, seek, SEEK_SET);
 #endif
 	ret_val = disk_drive.current->sector << 1;
 #ifdef DISK_DEBUG  
@@ -163,7 +163,7 @@ uint8_t sector()
 	return ret_val;
 }
 
-void write(uint8_t b)
+void disk_write(uint8_t b)
 {
 #ifdef DISK_DEBUG
 #ifdef ARDUINO
@@ -179,7 +179,7 @@ void write(uint8_t b)
 #ifdef ARDUINO
 	disk_drive.current->fp.write(&b, 1);
 #else
-	fwrite(&b, 1, 1, disk_drive.current->fp);
+	fwrite(&b, 1, 1, disk_drive.current->diskfp);
 #endif
 	if(disk_drive.current->write_status == 137)
 	{
@@ -197,7 +197,7 @@ void write(uint8_t b)
 		disk_drive.current->write_status++;
 }
 
-uint8_t read()
+uint8_t disk_read()
 {
 	static uint32_t bytes = 0;
 	uint8_t b;
@@ -205,7 +205,7 @@ uint8_t read()
 #ifdef ARDUINO
 	b = disk_drive.current->fp.read();
 #else
-	fread(&b, 1, 1, disk_drive.current->fp);
+	fread(&b, 1, 1, disk_drive.current->diskfp);
 #endif
 
 	bytes++;

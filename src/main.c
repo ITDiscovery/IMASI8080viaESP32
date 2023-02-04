@@ -78,13 +78,13 @@ uint16_t bus_status;
 void load_file(intel8080_t *cpu)
 {
 	size_t size = 0;
-	FILE* fp = fopen("software/input.com", "rb");
+	FILE* diskfp = fopen("software/input.com", "rb");
 
-	fseek(fp, 0, SEEK_END);
-	size = ftell(fp);
-	fseek(fp, 0, SEEK_SET);
-	fread(&memory[0x100], 1, size, fp);
-	fclose(fp);
+	fseek(diskfp, 0, SEEK_END);
+	size = ftell(diskfp);
+	fseek(diskfp, 0, SEEK_SET);
+	fread(&memory[0x100], 1, size, diskfp);
+	fclose(diskfp);
 }
 
 const char *byte_to_binary(int x)
@@ -104,12 +104,12 @@ const char *byte_to_binary(int x)
 void load_mem_file(const char* filename, size_t offset)
 {
 	size_t size;
-	FILE* fp = fopen(filename, "rb");
-	fseek(fp, 0, SEEK_END);
-	size = ftell(fp);
-	fseek(fp, 0, SEEK_SET);
-	fread(&memory[offset], 1, size, fp);
-	fclose(fp);
+	FILE* diskfp = fopen(filename, "rb");
+	fseek(diskfp, 0, SEEK_END);
+	size = ftell(diskfp);
+	fseek(diskfp, 0, SEEK_SET);
+	fread(&memory[offset], 1, size, diskfp);
+	fclose(diskfp);
 }
 
 uint8_t sense()
@@ -186,10 +186,14 @@ int main(int argc, char *argv[])
 	
 	memset(memory, 0, 64*1024);
 
-	if ((serialfd = serialOpen ("/dev/serial0", 9600)) < 0)
-  	{
-    	fprintf (stderr, "Unable to open serial0.\n") ;
-	}
+	serialfd = serialOpen("/dev/serial0",9600);
+	//if ((serialfd = serialOpen ("/dev/serial0", 9600)) < 0)
+  	//{
+    //	printf ("Unable to open serial0.\n");
+	//}
+	//else {
+	serialPrintf(serialfd,"Hello World!\n");
+	//}
 
 	#ifdef SOCKET
 	sock = socket(AF_INET, SOCK_STREAM, 0);
@@ -221,8 +225,8 @@ int main(int argc, char *argv[])
 	disk_controller.disk_function = disk_function;
 	disk_controller.disk_select = disk_select;
 	disk_controller.disk_status = disk_status;
-	disk_controller.read = read;
-	disk_controller.write = write;
+	disk_controller.read = disk_read;
+	disk_controller.write = disk_write;
 	disk_controller.sector = sector;
 
 	i8080_reset(&cpu, term_in, term_out, sense, &disk_controller);
@@ -335,8 +339,8 @@ int main(int argc, char *argv[])
 						printf("Aux1 Down: Load ROMs and Software\n");
         				load_mem_file("software/ROMs/88dskrom.bin", 0xff00);
 						// Mount diskette 1 (CP/M OS) and 2 (Games)
-						disk_drive.disk1.fp = fopen("software/Burcon/cpm.dsk","r+b");
-						disk_drive.disk2.fp = fopen("software/Burcon/sysgen.dsk","r+b");
+						disk_drive.disk1.diskfp = fopen("software/Burcon/cpm.dsk","r+b");
+						disk_drive.disk2.diskfp = fopen("software/Burcon/sysgen.dsk","r+b");
 						i8080_examine(&cpu, 0xff00);
 					}
 					if(cmd_switches & AUX1_DOWN)
@@ -344,8 +348,8 @@ int main(int argc, char *argv[])
 						printf("Aux1 Down: Load ROMs and Software\n");
         				load_mem_file("software/ROMs/88dskrom.bin", 0xff00);
 						// Mount diskette 1 (CP/M OS) and 2 (Games)
-						disk_drive.disk1.fp = fopen("software/Burcon/cpm.dsk","r+b");
-						disk_drive.disk2.fp = fopen("software/Burcon/application.dsk", "r+b");
+						disk_drive.disk1.diskfp = fopen("software/Burcon/cpm.dsk","r+b");
+						disk_drive.disk2.diskfp = fopen("software/Burcon/application.dsk", "r+b");
 						i8080_examine(&cpu, 0xff00);
 					}
  				}

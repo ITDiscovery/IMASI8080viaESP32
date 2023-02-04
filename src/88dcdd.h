@@ -25,9 +25,9 @@
 typedef struct
 {
 #ifdef ARDUINO
-	File fp;
+	File diskfp;
 #else
-	FILE* fp;
+	FILE* diskfp;
 #endif
 	uint8_t track;
 	uint8_t sector;
@@ -49,8 +49,7 @@ void disk_select(uint8_t b);
 uint8_t disk_status();
 void disk_function(uint8_t b);
 uint8_t sector();
-void write(uint8_t b);
-uint8_t read();
-
+void disk_write(uint8_t b);
+uint8_t disk_read();
 
 #endif

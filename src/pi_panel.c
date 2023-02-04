@@ -28,11 +28,7 @@ uint8_t shiftIn(uint8_t dpin,uint8_t cpin,uint8_t order) {
 
 void rpi_init()
 {
-	if (wiringPiSetup () == -1)
-  {
-    printf ("Unable to start wiringPi.\n");
-    return 1 ;
-  }
+	wiringPiSetup ();
 	pinMode(LEDlPIN,OUTPUT);
 	pinMode(LEDlPIN,OUTPUT);
 	pinMode(LEDcPIN,OUTPUT);
