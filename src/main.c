@@ -356,7 +356,7 @@ int main(int argc, char *argv[])
 					if(cmd_switches & AUX2_UP)
 					{
 						serialPrintf("Aux2 Up\n");
-        				load_mem_file("software/ROMs/88dskrom.bin", 0xff00);
+        				load_mem_file("software/altair/disbas50.bin", 0xff00);
 						// Mount diskette 1 (CP/M OS) and 2 (Games)
 						disk_drive.disk1.diskfp = fopen("software/Burcon/cpm.dsk","r+b");
 						disk_drive.disk2.diskfp = fopen("software/Burcon/application.dsk", "r+b");
