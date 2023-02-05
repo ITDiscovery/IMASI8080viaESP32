@@ -26,7 +26,7 @@ int serialfd;
 
 void dump_regs(intel8080_t *cpu)
 {
-	printf("Adr:%04x\t DB:%02x\t PC:%04x\t C:%02x\t D:%02x\t E:%02x\n", cpu->address_bus, cpu->data_bus, cpu->registers.pc, cpu->registers.c, cpu->registers.d, cpu->registers.e);
+	serialPrintf(serialfd,"Adr:%04x\t DB:%02x\t PC:%04x\t C:%02x\t D:%02x\t E:%02x\n", cpu->address_bus, cpu->data_bus, cpu->registers.pc, cpu->registers.c, cpu->registers.d, cpu->registers.e);
 }
 
 // IO Table is found in intel8080_out and intel8080_in
@@ -270,56 +270,55 @@ int main(int argc, char *argv[])
 					if(cmd_switches & EXAMINE)
 					{
 						i8080_examine(&cpu, bus_switches);
-
 						serialPrintf(serialfd,"Examine Address: %x  Data: %x\n",  cpu.address_bus, cpu.data_bus );
 					}
 					if(cmd_switches & EXAMINE_NEXT)
 					{
 						i8080_examine_next(&cpu);						
-						printf("Examine Address: %x  Data: %x\n",  cpu.address_bus, cpu.data_bus );
+						serialPrintf(serialfd,"Examine Address: %x  Data: %x\n",  cpu.address_bus, cpu.data_bus );
 					}
 					if(cmd_switches & DEPOSIT)
 					{
 						i8080_deposit(&cpu, bus_switches & 0xff);
-						printf("Deposit Address: %x  Data: %x\n",  cpu.address_bus, cpu.data_bus );
+						serialPrintf(serialfd,"Deposit Address: %x  Data: %x\n",  cpu.address_bus, cpu.data_bus );
 					}
 					if(cmd_switches & DEPOSIT_NEXT)
 					{
 						i8080_deposit_next(&cpu, bus_switches & 0xff);
-						printf("Deposit Next Address: %x  Data: %x\n",  cpu.address_bus, cpu.data_bus );
+						serialPrintf(serialfd,"Deposit Next Address: %x  Data: %x\n",  cpu.address_bus, cpu.data_bus );
 					}
 					if(cmd_switches & RESET_CMD)
 					{
-						printf("Reset\n");
+						serialPrintf(serialfd,"Reset\n");
 						i8080_reset(&cpu, term_in, term_out, sense, &disk_controller);
 					}
 					if(cmd_switches & CLR_CMD)
 					{
-						printf("Clear\n");
+						serialPrintf(serialfd,"Clear\n");
 					}
 					if(cmd_switches & RUN_CMD)
 					{
 						// Set Bit in Bus State Run LED and Clear MI
 						bus_status |= RUNM;
 						bus_status &= ~(MI);
-						printf("Run at %x\n",cpu.address_bus);
+						serialPrintf(serialfd,"Run at %x\n",cpu.address_bus);
 						mode = RUN;
 					}
 					if(cmd_switches & SINGLE_STEP)
 					{
 						bus_status |= MI;
-						//printf("Single Step at %x\n",cpu.address_bus );
+						serialPrintf(serialfd,"Single Step at %x\n",cpu.address_bus );
 						i8080_cycle(&cpu);
         				dump_regs(&cpu);
 					}
 					if(cmd_switches & PROTECT)
 					{
-					printf("Protect - Dump Registers\n");
+					serialPrintf(serialfd,"Protect - Dump Registers\n");
         			dump_regs(&cpu);
 					}
 					if(cmd_switches & UNPROTECT)
 					{
-					printf("Unprotect - Load Killbits\n");
+					serialPrintf(serialfd,"Unprotect - Load Killbits\n");
         			uint8_t killbits[] = { //killbits
 					0x00,0x21,0x00,0x00,
 					0x16,0x80,
@@ -337,7 +336,7 @@ int main(int argc, char *argv[])
 					}
 					if(cmd_switches & AUX1_UP)
 					{
-						printf("Aux1 Down: Load ROMs and Software\n");
+						serialPrintf(serialfd,"Aux1 Down: Load ROMs and Software\n");
         				load_mem_file("software/ROMs/88dskrom.bin", 0xff00);
 						// Mount diskette 1 (CP/M OS) and 2 (Games)
 						disk_drive.disk1.diskfp = fopen("software/Burcon/cpm.dsk","r+b");
@@ -346,7 +345,7 @@ int main(int argc, char *argv[])
 					}
 					if(cmd_switches & AUX1_DOWN)
 					{
-						printf("Aux1 Down: Load ROMs and Software\n");
+						serialPrintf(serialfd,"Aux1 Down: Load ROMs and Software\n");
         				load_mem_file("software/ROMs/88dskrom.bin", 0xff00);
 						// Mount diskette 1 (CP/M OS) and 2 (Games)
 						disk_drive.disk1.diskfp = fopen("software/Burcon/cpm.dsk","r+b");
@@ -355,11 +354,11 @@ int main(int argc, char *argv[])
 					}
 					if(cmd_switches & AUX2_UP)
 					{
-						serialPrintf("Aux2 Up\n");
-        				load_mem_file("software/altair/disbas50.bin", 0xff00);
+						serialPrintf(serialfd,"Aux2 Up: Load Disk Basic Rom\n");
+        				load_mem_file("software/altair/disbas50.bin", 0xf000);
 						// Mount diskette 1 (CP/M OS) and 2 (Games)
-						disk_drive.disk1.diskfp = fopen("software/Burcon/cpm.dsk","r+b");
-						disk_drive.disk2.diskfp = fopen("software/Burcon/application.dsk", "r+b");
+						disk_drive.disk1.diskfp = fopen("software/altair/altdos.dsk","r+b");
+						disk_drive.disk2.diskfp = fopen("software/altair/altdos2.dsk", "r+b");
 					}
  				}
 				if(mode == RUN)
