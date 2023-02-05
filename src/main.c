@@ -5,7 +5,7 @@
 
 #define DEBUG
 
-#define SOCKET
+//#define SOCKET
 #ifdef SOCKET
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -175,9 +175,6 @@ int main(int argc, char *argv[])
 	uint32_t counter = 0;
 	unsigned long ok = 1;
 	char yes = 1;
-	struct sockaddr_in listen_addr;
-	struct sockaddr client_addr;
-	int sock_size;
 	uint16_t breakpoint = 0x0;
 	bus_status = 0xF000;
 	disk_controller_t disk_controller;
@@ -195,6 +192,9 @@ int main(int argc, char *argv[])
 	}
 
 	#ifdef SOCKET
+	struct sockaddr_in listen_addr;
+	struct sockaddr client_addr;
+	int sock_size;
 	sock = socket(AF_INET, SOCK_STREAM, 0);
 	setsockopt(sock, SOL_SOCKET, SO_LINGER, &yes, sizeof(char));
 	setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));
@@ -355,7 +355,7 @@ int main(int argc, char *argv[])
 					if(cmd_switches & AUX2_UP)
 					{
 						serialPrintf(serialfd,"Aux2 Up: Load Disk Basic Rom\n");
-        				load_mem_file("software/altair/disbas50.bin", 0xf000);
+        				load_mem_file("software/ROMs/disbas50.bin", 0xf000);
 						// Mount diskette 1 (CP/M OS) and 2 (Games)
 						disk_drive.disk1.diskfp = fopen("software/altair/altdos.dsk","r+b");
 						disk_drive.disk2.diskfp = fopen("software/altair/altdos2.dsk", "r+b");
