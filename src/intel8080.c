@@ -723,8 +723,8 @@ uint8_t i8080_in(intel8080_t *cpu)
 		cpu->registers.a = 0x2; // bit 1 == transmit buffer empty
 		if(!character)
 		{
-			character = sock_in();
-			//character = cpu->term_in();
+			//character = sock_in();
+			character = cpu->term_in();
 		}
 		if(character)
 		{
@@ -733,6 +733,18 @@ uint8_t i8080_in(intel8080_t *cpu)
 		break;
 	case 0x11: // 88-2SIO or 88-ACR port 1, read
 		if(character)
+		{
+			cpu->registers.a = character;
+			character = 0;
+		}
+		else
+		{
+			//cpu->registers.a = sock_in();
+			cpu->registers.a = cpu->term_in();
+		}
+		break;
+	case 0x12: //No idea what this is supposed to be..
+			if(character)
 		{
 			cpu->registers.a = character;
 			character = 0;
@@ -790,6 +802,10 @@ uint8_t i8080_out(intel8080_t *cpu)
 	case 0x10:  // 2SIO port 1 control
 		break;
 	case 0x11: // 2sio port 1 write
+		//sock_out(cpu->registers.a);
+		cpu->term_out(cpu->registers.a);
+		break;
+	case 0x12:
 		sock_out(cpu->registers.a);
 		//cpu->term_out(cpu->registers.a);
 		break;

@@ -3,6 +3,8 @@
 #include "intel8080.h"
 #include "88dcdd.h"
 
+#define DEBUG
+
 #define SOCKET
 #ifdef SOCKET
 #include <sys/types.h>
@@ -11,6 +13,8 @@
 #include <netinet/ip.h>
 #include <sys/ioctl.h>
 #include <fcntl.h>
+int sock;
+int client_sock;
 #endif
 
 	// strcat
@@ -18,9 +22,7 @@
 #include "pi_panel.h"
 #include <wiringPi.h>
 #include <wiringSerial.h>
-
-int sock;
-int client_sock;
+int serialfd;
 
 void dump_regs(intel8080_t *cpu)
 {
@@ -28,6 +30,7 @@ void dump_regs(intel8080_t *cpu)
 }
 
 // IO Table is found in intel8080_out and intel8080_in
+#ifdef SOCKET
 uint8_t sock_in()
 {
 	uint8_t b;
@@ -41,20 +44,19 @@ uint8_t sock_in()
 		return b;
 	}
 }
-
 void sock_out(uint8_t b)
 {
 	b = b & 0x7f;
 	send(client_sock, (char*)&b, 1, 0);
 }
-
+#endif //SOCKET
 
 
 uint8_t term_in()
 {
-	uint8_t b;
-
-	if(recv(client_sock, (char*)&b, 1, 0) != 1)
+	uint8_t b = serialGetchar(serialfd);
+	if(b = -1)
+	//if(recv(client_sock, (char*)&b, 1, 0) != 1)
 	{
 		return 0;
 	}
@@ -67,7 +69,8 @@ uint8_t term_in()
 void term_out(uint8_t b)
 {
 	b = b & 0x7f;
-	send(client_sock, (char*)&b, 1, 0);
+	serialPutchar(serialfd,b);
+	//send(client_sock, (char*)&b, 1, 0);
 }
 
 uint8_t memory[64*1024];
@@ -174,7 +177,6 @@ int main(int argc, char *argv[])
 	char yes = 1;
 	struct sockaddr_in listen_addr;
 	struct sockaddr client_addr;
-	int serialfd;
 	int sock_size;
 	uint16_t breakpoint = 0x0;
 	bus_status = 0xF000;
@@ -237,6 +239,7 @@ int main(int argc, char *argv[])
 	uint8_t mode = STOP;
 	uint32_t cycle_counter = 0;
 
+	// Start of Processing Loop
 	while(1)
 	{
 		if(mode == RUN)
@@ -267,7 +270,8 @@ int main(int argc, char *argv[])
 					if(cmd_switches & EXAMINE)
 					{
 						i8080_examine(&cpu, bus_switches);
-						printf("Examine Address: %x  Data: %x\n",  cpu.address_bus, cpu.data_bus );
+
+						serialPrintf(serialfd,"Examine Address: %x  Data: %x\n",  cpu.address_bus, cpu.data_bus );
 					}
 					if(cmd_switches & EXAMINE_NEXT)
 					{
@@ -351,8 +355,11 @@ int main(int argc, char *argv[])
 					}
 					if(cmd_switches & AUX2_UP)
 					{
-						printf("Aux1 Down\n");
-						serialPrintf(serialfd,"Hello World!\n");
+						serialPrintf("Aux2 Up\n");
+        				load_mem_file("software/ROMs/88dskrom.bin", 0xff00);
+						// Mount diskette 1 (CP/M OS) and 2 (Games)
+						disk_drive.disk1.diskfp = fopen("software/Burcon/cpm.dsk","r+b");
+						disk_drive.disk2.diskfp = fopen("software/Burcon/application.dsk", "r+b");
 					}
  				}
 				if(mode == RUN)
