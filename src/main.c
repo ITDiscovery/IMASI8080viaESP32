@@ -54,6 +54,7 @@ void sock_out(uint8_t b)
 
 uint8_t term_in()
 {
+	//Something is not working here..the ROMs are waiting on the input
 	uint8_t b = serialGetchar(serialfd);
 	if(b = -1)
 	//if(recv(client_sock, (char*)&b, 1, 0) != 1)
@@ -70,6 +71,7 @@ void term_out(uint8_t b)
 {
 	b = b & 0x7f;
 	serialPutchar(serialfd,b);
+	serialFlush(serialfd);
 	//send(client_sock, (char*)&b, 1, 0);
 }
 
@@ -355,10 +357,16 @@ int main(int argc, char *argv[])
 					if(cmd_switches & AUX2_UP)
 					{
 						serialPrintf(serialfd,"Aux2 Up: Load Disk Basic Rom\n");
-        				load_mem_file("software/ROMs/disbas50.bin", 0xf000);
+        				load_mem_file("software/ROMs/disbas50.bin", 0xe000);
 						// Mount diskette 1 (CP/M OS) and 2 (Games)
 						disk_drive.disk1.diskfp = fopen("software/altair/altdos.dsk","r+b");
 						disk_drive.disk2.diskfp = fopen("software/altair/altdos2.dsk", "r+b");
+					}
+					if(cmd_switches & AUX2_DOWN)
+					{
+						serialPrintf(serialfd,"Aux2 Down: Load ROMs\n");
+						load_roms();
+						i8080_examine(&cpu, 0xe000);
 					}
  				}
 				if(mode == RUN)
