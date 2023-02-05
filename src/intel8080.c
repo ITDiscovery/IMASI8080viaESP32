@@ -701,6 +701,7 @@ uint8_t i8080_in(intel8080_t *cpu)
 	case 0x00:
 		cpu->registers.a = 0x00;
 		break;
+	// CPU Board Serial Port
 	case 0x1:
 		cpu->registers.a = cpu->term_in();
 		break;
@@ -722,8 +723,8 @@ uint8_t i8080_in(intel8080_t *cpu)
 		cpu->registers.a = 0x2; // bit 1 == transmit buffer empty
 		if(!character)
 		{
-			// character = sock();
-			character = cpu->term_in();
+			character = sock_in();
+			//character = cpu->term_in();
 		}
 		if(character)
 		{
@@ -738,18 +739,8 @@ uint8_t i8080_in(intel8080_t *cpu)
 		}
 		else
 		{
-			cpu->registers.a = cpu->term_in();
-		}
-		break;
-	case 0x12:
-			if(character)
-		{
-			cpu->registers.a = character;
-			character = 0;
-		}
-		else
-		{
-			cpu->registers.a = cpu->term_in();
+			cpu->registers.a = sock_in();
+			//cpu->registers.a = cpu->term_in();
 		}
 		break;
 	case 0x18: // 88-ACR Board I/O 2ndary
@@ -779,6 +770,7 @@ uint8_t i8080_out(intel8080_t *cpu)
     uint8_t ioport = read8(cpu->registers.pc+1);
 	switch(read8(cpu->registers.pc+1))
 	{
+	// CPU Board Serial Port
 	case 0x01:
 		cpu->term_out(cpu->registers.a);
 		break;
@@ -798,11 +790,8 @@ uint8_t i8080_out(intel8080_t *cpu)
 	case 0x10:  // 2SIO port 1 control
 		break;
 	case 0x11: // 2sio port 1 write
-		// sock_out(cpu->registers.a);
-		cpu->term_out(cpu->registers.a);
-		break;
-	case 0x12: // 2SUI Port 2 Write
-		// sock_out(cpu->registers.a);
+		sock_out(cpu->registers.a);
+		//cpu->term_out(cpu->registers.a);
 		break;
 	case 0x22:
 		printf("Out Port: 0x22 Data: %x\n",cpu->registers.a);

@@ -98,4 +98,8 @@ uint8_t read8(uint16_t address);
 void write8(uint16_t address, uint8_t val);
 uint16_t read16(uint16_t address);
 void write16(uint16_t address, uint16_t val);
+
+uint8_t sock_in();
+void sock_out(uint8_t b);
+
 #endif

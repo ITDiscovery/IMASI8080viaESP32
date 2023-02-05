@@ -187,13 +187,10 @@ int main(int argc, char *argv[])
 	memset(memory, 0, 64*1024);
 
 	serialfd = serialOpen("/dev/serial0",9600);
-	//if ((serialfd = serialOpen ("/dev/serial0", 9600)) < 0)
-  	//{
-    //	printf ("Unable to open serial0.\n");
-	//}
-	//else {
-	serialPrintf(serialfd,"Hello World!\n");
-	//}
+	if ((serialfd = serialOpen ("/dev/serial0", 9600)) < 0)
+  	{
+    	printf ("Unable to open serial0.\n");
+	}
 
 	#ifdef SOCKET
 	sock = socket(AF_INET, SOCK_STREAM, 0);
@@ -351,6 +348,11 @@ int main(int argc, char *argv[])
 						disk_drive.disk1.diskfp = fopen("software/Burcon/cpm.dsk","r+b");
 						disk_drive.disk2.diskfp = fopen("software/Burcon/application.dsk", "r+b");
 						i8080_examine(&cpu, 0xff00);
+					}
+					if(cmd_switches & AUX2_UP)
+					{
+						printf("Aux1 Down\n");
+						serialPrintf(serialfd,"Hello World!\n");
 					}
  				}
 				if(mode == RUN)
