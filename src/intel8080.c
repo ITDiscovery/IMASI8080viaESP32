@@ -786,6 +786,9 @@ uint8_t i8080_out(intel8080_t *cpu)
     uint8_t ioport = read8(cpu->registers.pc+1);
 	switch(read8(cpu->registers.pc+1))
 	{
+	case 0x00:
+		cpu->term_out(cpu->registers.a);
+		break;
 	// CPU Board Serial Port
 	case 0x01:
 		cpu->term_out(cpu->registers.a);

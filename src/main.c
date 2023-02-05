@@ -23,6 +23,10 @@ int client_sock;
 #include <wiringPi.h>
 #include <wiringSerial.h>
 int serialfd;
+uint8_t memory[64*1024];
+uint16_t cmd_switches;
+uint16_t bus_switches;
+uint16_t bus_status;
 
 void dump_regs(intel8080_t *cpu)
 {
@@ -51,7 +55,6 @@ void sock_out(uint8_t b)
 }
 #endif //SOCKET
 
-
 uint8_t term_in()
 {
 	//Something is not working here..the ROMs are waiting on the input
@@ -75,11 +78,6 @@ void term_out(uint8_t b)
 	//send(client_sock, (char*)&b, 1, 0);
 }
 
-uint8_t memory[64*1024];
-uint16_t cmd_switches;
-uint16_t bus_switches;
-uint16_t bus_status;
-
 void load_file(intel8080_t *cpu)
 {
 	size_t size = 0;
@@ -102,7 +100,6 @@ const char *byte_to_binary(int x)
     {
         strcat(b, ((x & z) == z) ? "1" : "0");
     }
-
     return b;
 }
 
@@ -122,7 +119,8 @@ uint8_t sense()
 	return bus_switches >> 8;
 }
 
-void load_raw_data(uint8_t program[], int s, int offset) {
+void load_raw_data(uint8_t program[], int s, int offset) 
+{
    for (int i=0; i<s; i++) {
      memory[i+offset] = program[i];
    }
