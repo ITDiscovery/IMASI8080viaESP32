@@ -1,6 +1,6 @@
 extern "C" {
-  #include "../src/intel8080.h"
-  #include "../src/88dcdd.h"
+  #include "intel8080.h"
+  #include "88dcdd.h"
 }
 #include <SPI.h>
 #include <SD.h>
@@ -393,4 +393,3 @@ if(mode == RUN)
 
 
 }
-

@@ -8,7 +8,7 @@ Design Goals:
 1. Make smaller Blinkin Boards to extend? Such as a 7-Segment to show address and data bus values.
 1. Would be nice to allow it to emulate a PDP-8 also.
 
-Had to dump the idea of using AVR128DB28 Flash...newly posted specs show only a 1K cycle. RevB and on uses a 23LC512 (much slower, and uses an additional 4 pins from the AVR, but using an AVR64DB28 is not possible).
+Had to dump the idea of using AVR128DB28 Flash...newly posted specs show only a 1K cycle. RevB and on uses a 23LC512 (much slower, and uses an additional 4 pins from the AVR, but using an AVR64DB28 is now possible).
 
 RevA boards would need too many mods.
 RevB boards will need to a mod to go from Pin 1 of U2 to Pin 24 of H3.
@@ -148,6 +148,9 @@ https://github.com/j-hoppe/BlinkenBone/releases
 
 Altair via shift registers: 
 https://github.com/companje/Altair8800
+
+AVR Install Notes:
+Needs SdFat library (current is 2.2)
 
 Rasperry Pi Note:
 Big problems with a C++ library for GPIO, due to trolls annoying the original author. Here's how to install wiringPi:
