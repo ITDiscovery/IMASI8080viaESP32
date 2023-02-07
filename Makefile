@@ -1,7 +1,7 @@
 CC=gcc
 CFLAGS=-g -I. $(OPTFLAGS)
 LIBS=$(OPTLIBS)
-SOURCES=$(wildcard src/**/*.c src/*.c)
+SOURCES=$(wildcard AltaironAVR/**/*.c AltaironAVR/*.c)
 OBJECTS=$(patsubst %.c,%.o,$(SOURCES))
 
 %.o: %.c $(SOURCES)
