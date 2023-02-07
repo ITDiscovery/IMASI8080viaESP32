@@ -80,6 +80,7 @@ void term_out(uint8_t b)
 
 void load_file(intel8080_t *cpu)
 {
+	// What does this do? Anything??
 	size_t size = 0;
 	FILE* diskfp = fopen("software/input.com", "rb");
 
