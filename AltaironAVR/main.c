@@ -1,3 +1,5 @@
+#ifndef __AVR_AVR128DB28__ 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "intel8080.h"
@@ -384,3 +386,5 @@ int main(int argc, char *argv[])
 
 	return 0;
 }
+
+#endif // __AVR_AVR128DB28__

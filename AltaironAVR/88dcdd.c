@@ -1,8 +1,10 @@
 #include <stdio.h>
-#ifdef ARDUINO
-	#include <Arduino.h>
-	#include <SdFat.h>
+
+#ifdef __AVR_AVR128DB28__
+  #include <SPI.h>
+  #include <SD.h>
 #endif
+
 #include "88dcdd.h"
 
 //#define DISK_DEBUG

@@ -24,11 +24,12 @@
 
 typedef struct
 {
-#ifdef ARDUINO
+#ifdef __AVR__AVR128__
 	File diskfp;
 #else
 	FILE* diskfp;
-#endif
+#endif //__AVR__AVR128__
+
 	uint8_t track;
 	uint8_t sector;
 	uint8_t status;

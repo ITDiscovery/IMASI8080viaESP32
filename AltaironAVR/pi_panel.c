@@ -1,3 +1,5 @@
+#ifndef __AVR_AVR128DB28__ 
+
 #include <wiringPi.h>
 #include <stdbool.h>
 #include "types.h"
@@ -75,3 +77,5 @@ void read_write_panel(uint16_t status, uint8_t data, uint16_t bus, uint16_t *bus
     *bus_switches = (ah<<8) + al;
     *cmd_switches = (ch<<8) + cl;
 }
+
+#endif // __AVR_AVR128DB28__ 

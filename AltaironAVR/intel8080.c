@@ -3,7 +3,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#ifdef ARDUINO
+#ifdef __AVR_AVR128DB28__
 	#include <Arduino.h>
 	#include <SPI.h>
 #endif
