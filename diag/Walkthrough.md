@@ -3,6 +3,7 @@ This example will walk through entry on the main panel switches a program that a
 
 ## Assembler
 
+```
 .orignates at $0000
 LDA $0100
 MOV A->B
@@ -10,14 +11,18 @@ LDA $0101
 ADD A+B
 STA $0102
 JMP $0000
+```
 
 ## Manual Assembly
+
+```
 0000: 3A 01 00
 0003: 47
 0004: 3A 01 01
 0007: 80
 0008: 32 02 01
 000B: C3 00 00
+```
 
 ## Entering in via the panel
 
