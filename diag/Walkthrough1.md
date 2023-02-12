@@ -6,19 +6,18 @@ This example will walk through entry on the main panel switches a program that c
 ```
 .originates at 0x0000
 
-
-MOV C, 0        ; Initialize C to 0
-
-DELAY:
-    DJNZ DELAY    ; Decrement B and jump to DELAY if not zero
-
+    MOV C, 0      ; Initialize C to 0
 START:
     MOV A, C      ; Load counter value into A
     OUT 0xff      ; Output counter value
     INR C         ; Increment C
-    CJNE C, 16, START ; Jump to start if C is not equal to 16
-    MOV B, 200    ; Load 200 into B for delay
-    JMP DELAY     ; Jump to DELAY
+    MOV B, 255    ; Load 255 into B for delay
+
+DELAY:
+    DEC B         ; Decrement B
+    JNZ DELAY     ; Jump to Delay if B is not Zero
+    JMP START     ; Jump to next value of C
+    JMP 0x000     ; Jump to start of program
 
 END
 ```
@@ -26,13 +25,15 @@ END
 ## Manual Assembly
 
 ```
-0x00: 0E 00 ; MOV C, 0x00
-0x02: D2 07 ; DJNZ DELAY
-0x04: D3 FF ; OUT 0xff
-0x05: 0C  ; INR C
-0x06: FE 10  ; CJNE C, 0x10, <offset>
-0x08: 06 C8 ; MOV B, 0xC8
-0x09: C2 02 00 ; JMP DELAY
+0x0000: 0x0E 00      ; MOV C, 0
+0x0002: 0x7E         ; MOV A, C
+0x0003: 0xD3 FF      ; OUT 0xff
+0x0005: 0x0C         ; INR C
+0x0006: 0x06 FF      ; MOV B, 255
+0x0008: 0x05         ; DEC B
+0x0009: 0xC2 08 00   ; JNZ 0x0008
+0x000C: 0xC3 00 00   ; JMP 0x0000
+0x000F:              ; END
 ```
 
 ## Entering in via the panel
@@ -42,15 +43,18 @@ END
 | Examine | 00 | 00 |
 | Deposit |  | 0E |
 | Deposit-Next | | 00| 
+| Deposit-Next | | 7E| 
 | Deposit-Next | | D3| 
 | Deposit-Next | | FF| 
 | Deposit-Next | | 0C| 
-| Deposit-Next | | FE| 
-| Deposit-Next | | 10| 
 | Deposit-Next | | 06| 
-| Deposit-Next | | C8| 
+| Deposit-Next | | FF| 
+| Deposit-Next | | 05| 
 | Deposit-Next | | C2| 
-| Deposit-Next | | 02| 
+| Deposit-Next | | 08| 
+| Deposit-Next | | 00|
+| Deposit-Next | | C3| 
+| Deposit-Next | | 00| 
 | Deposit-Next | | 00|
 | Examine | 00 | 00 |
 | Run | | |
