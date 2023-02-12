@@ -52,5 +52,5 @@ JMP $0000
 | Stop | | | 
 | Examine | 01 | 02 |
 
-A5 Should be lit up on the Data Bus.
+A5 (10100101) should be lit up on the Data Bus.
 
