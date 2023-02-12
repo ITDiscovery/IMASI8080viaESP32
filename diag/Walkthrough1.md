@@ -30,11 +30,11 @@ END
 0x0002: 79         ; MOV A, C
 0x0003: D3 FF      ; OUT 0xff
 0x0005: 0D         ; DCR C
-0x0006: C2 FC FF   ; JNZ 0x0002
+0x0006: C2 02 00   ; JNZ 0x0002
 0x0006: 06 FF      ; MOV B, 255
 0x0008: 05         ; DEC B
 0x0009: 00 00 00   ; NOP
-0x000C: C2 FC FF   ; JNZ 0x0008
+0x000C: C2 08 00   ; JNZ 0x0008
 0x000F: C3 00 00   ; JMP 0x0000
                    ; END
 ```
