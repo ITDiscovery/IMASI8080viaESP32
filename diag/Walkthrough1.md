@@ -8,7 +8,7 @@ This example will walk through entry on the main panel switches a program that c
 
     MOV C, 0      ; Initialize C to 0
 START:
-    MOV A, C      ; Load counter value into A
+    MOV C, A          ; Load counter value into A
     OUT 0xff      ; Output counter value
     INR C         ; Increment C
     MOV B, 255    ; Load 255 into B for delay
@@ -25,14 +25,14 @@ END
 ## Manual Assembly
 
 ```
-0x0000: 0x0E 00      ; MOV C, 0
-0x0002: 0x7E         ; MOV A, C
-0x0003: 0xD3 FF      ; OUT 0xff
-0x0005: 0x0C         ; INR C
-0x0006: 0x06 FF      ; MOV B, 255
-0x0008: 0x05         ; DEC B
-0x0009: 0xC2 08 00   ; JNZ 0x0008
-0x000C: 0xC3 00 00   ; JMP 0x0000
+0x0000: 0E 00      ; MOV C, 0
+0x0002: 4F         ; MOV A, C
+0x0003: D3 FF      ; OUT 0xff
+0x0005: 0C         ; INR C
+0x0006: 06 FF      ; MOV B, 255
+0x0008: 05         ; DEC B
+0x0009: C2 08 00   ; JNZ 0x0008
+0x000C: C3 00 00   ; JMP 0x0000
 0x000F:              ; END
 ```
 
@@ -43,7 +43,7 @@ END
 | Examine | 00 | 00 |
 | Deposit |  | 0E |
 | Deposit-Next | | 00| 
-| Deposit-Next | | 7E| 
+| Deposit-Next | | 4F| 
 | Deposit-Next | | D3| 
 | Deposit-Next | | FF| 
 | Deposit-Next | | 0C| 
