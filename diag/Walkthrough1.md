@@ -5,35 +5,38 @@ This example will walk through entry on the main panel switches a program that c
 
 ```
 .originates at 0x0000
-
-    MOV C, 0      ; Initialize C to 0
 START:
-    MOV C, A          ; Load counter value into A
+    MOV C, 0x0F   ; Initialize C to 15
+COUNT:
+    MOV A, C      ; Load counter value into A
     OUT 0xff      ; Output counter value
-    INR C         ; Increment C
+    DCR C         ; Decrement C
+    JNZ START     ; Jump to START if C is Zero
     MOV B, 255    ; Load 255 into B for delay
 
 DELAY:
     DEC B         ; Decrement B
+    NOP           ; 
     JNZ DELAY     ; Jump to Delay if B is not Zero
     JMP START     ; Jump to next value of C
     JMP 0x000     ; Jump to start of program
-
 END
 ```
 
 ## Manual Assembly
 
 ```
-0x0000: 0E 00      ; MOV C, 0
-0x0002: 4F         ; MOV A, C
+0x0000: 0E 0F      ; MOV C, 0x0F
+0x0002: 79         ; MOV A, C
 0x0003: D3 FF      ; OUT 0xff
-0x0005: 0C         ; INR C
+0x0005: 0D         ; DCR C
+0x0006: C2 FC FF   ; JNZ 0x0002
 0x0006: 06 FF      ; MOV B, 255
 0x0008: 05         ; DEC B
-0x0009: C2 08 00   ; JNZ 0x0008
-0x000C: C3 00 00   ; JMP 0x0000
-0x000F:              ; END
+0x0009: 00 00 00   ; NOP
+0x000C: C2 FC FF   ; JNZ 0x0008
+0x000F: C3 00 00   ; JMP 0x0000
+                   ; END
 ```
 
 ## Entering in via the panel
@@ -42,19 +45,22 @@ END
 |---------|------------|------------|
 | Examine | 00 | 00 |
 | Deposit |  | 0E |
-| Deposit-Next | | 00| 
-| Deposit-Next | | 4F| 
+| Deposit-Next | | 0F| 
+| Deposit-Next | | 79| 
 | Deposit-Next | | D3| 
 | Deposit-Next | | FF| 
-| Deposit-Next | | 0C| 
+| Deposit-Next | | 0D| 
+| Deposit-Next | | C2| 
+| Deposit-Next | | FC| 
+| Deposit-Next | | FF| 
 | Deposit-Next | | 06| 
 | Deposit-Next | | FF| 
-| Deposit-Next | | 05| 
-| Deposit-Next | | C2| 
-| Deposit-Next | | 08| 
-| Deposit-Next | | 00|
-| Deposit-Next | | C3| 
+| Deposit-Next | | 05|
 | Deposit-Next | | 00| 
+| Deposit-Next | | 00| 
+| Deposit-Next | | 00|
+| Deposit-Next | | C3|
+| Deposit-Next | | 00|
 | Deposit-Next | | 00|
 | Examine | 00 | 00 |
 | Run | | |
