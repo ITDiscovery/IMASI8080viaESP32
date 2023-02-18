@@ -68,5 +68,5 @@ END
 | Examine | 00 | 00 |
 | Run | | |
 
-Thanks to ChatGPT for creating this code.
+Thanks to ChatGPT for helping to create this code.
 
