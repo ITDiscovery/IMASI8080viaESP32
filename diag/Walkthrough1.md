@@ -11,11 +11,11 @@ COUNT:
     MOV A, C      ; Load counter value into A
     OUT 0xff      ; Output counter value
     DCR C         ; Decrement C
-    JNZ START     ; Jump to START if C is Zero
+    JZ START      ; Jump to START if C is Zero
     MOV B, 255    ; Load 255 into B for delay
 
 DELAY:
-    DEC B         ; Decrement B
+    DCR B         ; Decrement B
     NOP           ; 
     JNZ DELAY     ; Jump to Delay if B is not Zero
     JMP START     ; Jump to next value of C
@@ -26,16 +26,16 @@ END
 ## Manual Assembly
 
 ```
-0x0000: 0E 0F      ; MOV C, 0x0F
+0x0000: 0E 0F      ; MOV C, 0x00
 0x0002: 79         ; MOV A, C
 0x0003: D3 FF      ; OUT 0xff
 0x0005: 0D         ; DCR C
-0x0006: C2 02 00   ; JNZ 0x0002
-0x0006: 06 FF      ; MOV B, 255
-0x0008: 05         ; DEC B
-0x0009: 00 00 00   ; NOP
-0x000C: C2 08 00   ; JNZ 0x0008
-0x000F: C3 00 00   ; JMP 0x0000
+0x0006: CA 00 00   ; JZ 0x0000
+0x0009: 06 FF      ; MOV B, 255
+0x000B: 05         ; DCR B
+0x000C: 00 00 00   ; NOP
+0x000F: C2 08 00   ; JNZ 0x0009
+0x000F: C3 02 00   ; JMP 0x0002
                    ; END
 ```
 
@@ -50,8 +50,8 @@ END
 | Deposit-Next | | D3| 
 | Deposit-Next | | FF| 
 | Deposit-Next | | 0D| 
-| Deposit-Next | | C2| 
-| Deposit-Next | | 02| 
+| Deposit-Next | | CA| 
+| Deposit-Next | | 00| 
 | Deposit-Next | | 00| 
 | Deposit-Next | | 06| 
 | Deposit-Next | | FF| 
@@ -63,7 +63,7 @@ END
 | Deposit-Next | | 08|
 | Deposit-Next | | 00|
 | Deposit-Next | | C3|
-| Deposit-Next | | 00|
+| Deposit-Next | | 02|
 | Deposit-Next | | 00|
 | Examine | 00 | 00 |
 | Run | | |
