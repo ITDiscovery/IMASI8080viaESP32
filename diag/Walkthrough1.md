@@ -34,7 +34,7 @@ END
 0x0009: 06 FF      ; MOV B, 255
 0x000B: 05         ; DCR B
 0x000C: 00 00 00   ; NOP
-0x000F: C2 08 00   ; JNZ 0x0009
+0x000F: C2 0B 00   ; JNZ 0x000B
 0x000F: C3 02 00   ; JMP 0x0002
                    ; END
 ```
@@ -60,7 +60,7 @@ END
 | Deposit-Next | | 00| 
 | Deposit-Next | | 00|
 | Deposit-Next | | C2|
-| Deposit-Next | | 08|
+| Deposit-Next | | 0B|
 | Deposit-Next | | 00|
 | Deposit-Next | | C3|
 | Deposit-Next | | 02|
