@@ -30,7 +30,7 @@ Bit 0 - 15
   - Implemented by setting bus_state.WO in i8080_out, i8080_mwrite, i8080_pairwrite
   - Implemented by clearing bus_state.WO in i8080_in, i8080_mread, i8080_pairread
 - STACK: The address buss hold's the stack pointer (not implemented)
-- HLTA: A HALT instruction has been acknowledged (not implemented)
+- HLTA: A HALT instruction has been acknowledged
 - OUT: Out to port
   - Implemented by setting bus_state.OUT in intel8080_out
   - Implemented by clearing bus_stat.OUT in intel8080_in, i8080_mwrite, i8080_mread
