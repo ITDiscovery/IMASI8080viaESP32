@@ -11,6 +11,8 @@ length of the message, we jump back to the LOOP label using the JNZ instruction.
 instruction.The message is defined as a null-terminated string using the DB (define byte) directive. We include a carriage return (0x0D) at the end
 of the message to move the cursor to the beginning of the next line.
 
+Change the IO Port if you want to use this code to check Serial Port or other device implementation.
+
 ## Assembly
 
 ```
