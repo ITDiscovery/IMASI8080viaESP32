@@ -22,6 +22,7 @@ END
 ```
   
 ## Hand Assembly
+```
 0000: 3E 03     ;Put UART reset Value in A
 0002: D3 10     ;Send value to Port 0x10
 0004: 3E 11     ;no RI, no XI, RTS Low, 8n1 to UART
@@ -32,6 +33,8 @@ END
 000E: DB 11     ;Read the character
 0010: D3 11     ;Echo it back out
 0012: C3 08 00  ;Jump back to wait loop
+```
+
 
 ## Entering in via the panel
 
