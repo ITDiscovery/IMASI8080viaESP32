@@ -1,137 +1,356 @@
+# Monitor mode for Altair
+
+## Assembly
 ```
-0xFD00 3E 03    MVI A, #0x03
-0xFD02 D3 10    OUT #0x10, A
-0xFD04 3E 11    MVI A, #0x11
-0xFD06 D3 10    OUT #0x10, A
-0xFD08 31 00 FC LXI SP, #0xFC00
-0xFD0B CD 9D FD CALL 0xFD9D
-0xFD0E 3E 2E    MVI A, #0x2E
-0xFD10 CD F2 FD CALL 0xFDF2
-0xFD13 CD E8 FD CALL 0xFDE8
-0xFD16 FE 4D    CPI #0x4D
-0xFD18 CA 29 FD JZ 0xFD29
-0xFD1B FE 44    CPI #0x44
-0xFD1D CC 4F FD CZ 0xFD4F
-0xFD20 FE 4A    CPI #0x4A
-0xFD22 C2 08 FD JNZ 0xFD08
-0xFD25 CD A7 FD CALL 0xFDA7
-0xFD28 E9       PCHL
-0xFD29 CD A7 FD CALL 0xFDA7
-0xFD2C 3E 23    MVI A, #0x23
-0xFD2E CD 9D FD CALL 0xFD9D
-0xFD31 54       MOV H, A
-0xFD32 5D       MOV E, L
-0xFD33 CD C9 FD CALL 0xFDC9
-0xFD36 1A       LDAX D
-0xFD37 67       MOV H, A
-0xFD38 CD CF FD CALL 0xFDCF
-0xFD3B CD A8 FD CALL 0xFDA8
-0xFD3E EB       XCHG
-0xFD3F DA 2D FD JC 0xFD2D
-0xFD42 77       MOV M, A
-0xFD43 BE       CMP M
-0xFD44 CA 2D FD JZ 0xFD2D
-0xFD47 3E 3F    MVI A, #0x3F
-0xFD49 CD F2 FD CALL 0xFDF2
-0xFD4C C3 08 FD JMP 0xFD08
-0xFD4F CD A7 FD CALL 0xFDA7
-0xFD52 EB       XCHG
-0xFD53 D4 E3 FD CNC 0xFDE3
-0xFD56 CD A7 FD CALL 0xFDA7
-0xFD59 3E 0D    MVI A, #0x0D
-0xFD5B 06 3C    MVI B, #0x3C
-0xFD5D CD F2 FD CALL 0xFDF2
-0xFD60 05       DEC B
-0xFD61 C2 5D FD JP NZ, FD5D
-0xFD64 B8       CP B
-0xFD65 78       LD A, B
-0xFD66 C2 5B FD JP NZ, FD5B
-0xFD69 7D       LD A, L
-0xFD6A 93       SUB E
-0xFD6B 6F       LD L, A
-0xFD6C 7C       LD A, H
-0xFD6D 9A       SBC A, D
-0xFD6E 67       LD H, A
-0xFD6F 23       INC HL
-0xFD70 05       DEC B
-0xFD71 7C       LD A, H
-0xFD72 B7       OR A, A
-0xFD73 C2 77 FD JP NZ, FD77
-0xFD76 45       LD B, L
-0xFD77 3E 3C    LD A, 3Ch
-0xFD79 CD F2 FD CALL FDF2
-0xFD7C 78       LD A, B
-0xFD7D CD F2 FD CALL FDF2
-0xFD80 0E       LD C, 0x00
-0xFD81 00       NOP
-0xFD82 7B       LD A, E
-0xFD83 CD F2 FD CALL 0xFDF2
-0xFD86 7A       LD A, D
-0xFD87 CD F2 FD CALL 0xFDF2
-0xFD8A 1A       LD A, (DE)
-0xFD8B CD F2 FD CALL 0xFDF2
-0xFD8E 13       INC DE
-0xFD8F 2B       DEC HL
-0xFD90 05       DEC B
-0xFD91 C2 8A FD JP NZ, 0xFD8A
-0xFD94 79       LD A, C
-0xFD95 CD F2 FD CALL 0xFDF2
-0xFD98 7C       LD A, H
-0xFD99 B5       OR L
-0xFD9A C2 70 FD JP NZ, 0xFD70
-0xFD9D 3E 0D    LD A, 0x0D
-0xFD9F CD F2 FD CALL FDF2
-0xFDA2 3E 0A    LD A, 0x0A
-0xFDA4 C3 F2 FD JMP FDF2 *****
-0xFDA7 06 06    LD B, 0x06
-0xFDA9 03       INC BC
-0xFDAA 21 00 00 LD HL, 0x0000
-0xFDAD CD E8 FD CALL FDE8
-0xFDB0 4F       LD C,A
-0xFDB1 FE 20    CP 0x20
-0xFDB3 37       SCF
-0xFDB4 C8       RET Z
-0xFDB5 E6 B8    AND 0xB8
-0xFDB7 EE 30    XOR  0x30
-0xFDB9 C2 47 FD JPNZ 0xFD47
-0xFDBC 79       LD A,C
-0xFDBD E6 07    AND 0x07
-0xFDBF 29       ADD HL,HL
-0xFDC0 29       ADD HL,HL
-0xFDC1 85       ADD A,L
-0xFDC2 6F       LD L,A
-0xFDC3 05       DEC B
-0xFDC4 C2 AD FD JPNZ 0xFDAD
-0xFDC7 C9       RET
-0xFDC8 06 06    LD B, 0x06
-0xFDCA AF       XOR A
-0xFDCB C3 D6 FD JP 0xFDD6
-0xFDCE 06 03    LD B, 0x03
-0xFDD0 E6 29    AND 0x29
-0xFDD2 17       RLA
-0xFDD3 29       ADD HL, HL
-0xFDD4 17       RLA
-0xFDD5 29       ADD HL, HL
-0xFDD6 17       RLA
-0xFDD7 E6 07    AND 0x07
-0xFDD9 F6 30    OR 0x30
-0xFDDB CD F2 FD CALL 0xFDF2
-0xFDDE 05       DEC B
-0xFDDF C2 D2 FD JP NZ,0xFDD2
-0xFDE2 3E 20    LD A,0x20
-0xFDE4 C3 F2 FD JP 0xFDF2
-0xFDE7 DB 10 0F IN Port 0x10
-0xFDEA D2 E8 FD JPNC, 0xFDE8
-0xFDED DB 11    IN (0x11)
-0xFDEF E6 7F    AND 0x7F
-0xFDF1 F5       PUSH AF
-0xFDF2 81       ADD A, C <-------
-0xFDF3 4F       LD C, A
-0xFDF4 DB 10    IN Port 0x10
-0xFDF6 0F       RRCA      
-0xFDF7 0F       RRCA
-0xFDF8 D2 F5 FD JPNC, 0xFDF5
-0xFDFB F1       POP AF
-0xFDFC D3 11    OUT (0x11), A
-0xFDFE C9       RET
+; **************************************************************
+;
+; MITS ALTAIR 8800 ROM MONITOR
+;
+; **************************************************************
+;
+; BASED ON THE ORIGINAL ALTAIR TURNKEY SYSTEM MONITOR
+;
+; MODIFIED BY:  SCOTT LABOMBARD
+;               8/9/02
+;
+; MODIFIED TO ASSEMBLE WITH INTEL 8080 CROSS ASSEMBLER
+;               UDO MUNK
+;               10/11/08
+;
+; *************************************************************
+
+STACK   EQU     0FC00H          ;MUST BE VALID RAM, NOT ROM!
+CONSTAT EQU     00H            ;IO STATUS PORT
+CONDATA EQU     01H            ;IO DATA PORT
+        ORG     0FD00H          ;ROM BASED CODE
+
+MON:    MVI     A,3             ;RESET UART
+        OUT     CONSTAT
+        MVI     A,011H          ;INITIALIZE UART
+        OUT     CONSTAT
+ENTER:  LXI     SP,STACK        ;INITIALIZE STACK POINTER
+        CALL    CRLF            ;PRINT CARRIAGE RET+LINE FEED
+        CALL    CRLF            ;PRINT CARRIAGE RET+LINE FEED
+        MVI     A,'.'           ;MONITOR PROMPT
+        CALL    OUTCHK          ;PRINT CHAR TO CONSOLE
+        CALL    INCH            ;GET CHAR FROM CONSOLE
+        CPI     'M'
+        JZ      MEM             ;DO MEMORY EXAMINE/ALTER
+        CPI     'D'
+        JZ      DMP             ;DO MEMORY DUMP
+        CPI     'J'
+        JNZ     ENTER
+
+; **************************************************************
+; GET JUMP ADDRESS, LOAD TO PC, AND GO
+; **************************************************************
+
+        CALL    OCTL6           ;GET 6 OCTAL DIGITS IN HL
+
+        PCHL
+
+
+
+
+; **************************************************************
+
+; MEMORY FUNCTION - DISPLAY AND/OR ALTER MEMORY
+
+; **************************************************************
+
+MEM:    CALL    OCTL6           ;GET 6 OCTAL DIGITS IN HL
+
+        JMP     CONT1
+
+CONT:   INX     H               ;POINT TO NEXT ADDRESS
+
+CONT1:  CALL    CRLF            ;PRINT CARRIAGE RET+LINE FEED
+
+        MOV     D,H             ;SAVE ADDR TO DE
+
+        MOV     E,L
+
+        CALL    PRT6            ;CVT TO ASCII + PRINT
+
+        LDAX    D               ;LOAD DATA FROM CURRENT MEM LOC
+
+        MOV     H,A
+
+        CALL    PRT3            ;CVT TO ASCII + PRINT
+
+        CALL    OCTL3           ;GET 3 OCTAL DIGITS IN HL
+
+        XCHG                    ;EXCHANGE HL AND DE
+
+        JC      CONT
+
+        MOV     M,A             ;STORE USER SPECIFIED BYTE
+
+        CMP     M               ;VALIDATE DATA BYTE IN MEMORY
+
+        JZ      CONT            ;IF BYTE OKAY, KEEP GOING
+
+ERR:    MVI     A,'?'           ;WE HAVE A PROBLEM
+
+        CALL    OUTCHK          ;PRINT ERROR CHAR TO CONSOLE
+
+        JMP     ENTER
+
+
+
+
+; **************************************************************
+
+; DUMP FUNCTION - DISPLAY DATA BETWEEN TWO SPECIFIED MEM LOCS
+
+; **************************************************************
+
+DMP:    CALL    OCTL6           ;GET 6 OCTAL DIGITS IN HL
+
+        XCHG                    ;SAVE START ADDR TO DE
+
+        CNC     SPACE
+
+        CALL    OCTL6           ;GET 6 OCTAL DIGITS IN HL
+
+        PUSH    H               ;SAVE END ADDR
+
+DCONT:  MOV     H,D             ;MOV ADDR IN DE TO HL FOR PRINT
+
+        MOV     L,E
+
+        CALL    CRLF            ;PRINT CARRIAGE RET+LINE FEED
+
+        CALL    PRT6            ;CVT TO ASCII + PRINT
+
+        CALL    SPACE
+
+        LXI     B,010H          ;PRINT 16 MEM LOCATIONS PER LINE
+
+DO20:   LDAX    D               ;LOAD DATA FROM CURRENT MEM LOC
+
+        MOV     H,A
+
+        PUSH    B               ;SAVE PRINT LOCATION COUNTER
+
+        MVI     A,08H          ;IS HALF THE LINE PRINTED?
+
+        CMP     C
+
+        JNZ     NXTMEM
+
+        MVI     A,'-'           ;MAKES EACH LINE EASIER TO READ
+
+        CALL    OUTCHK
+
+        CALL    SPACE
+
+NXTMEM: CALL    PRT3            ;CVT TO ASCII + PRINT MEM DATA
+
+        POP     B               ;RESTORE PRINT LOCATION COUNTER
+
+        POP     H               ;RESTORE END ADDR
+
+        MOV     A,H             ;COMPARE CURRENT ADDR WITH END
+
+        CMP     D
+
+        JNZ     DAGN
+
+        MOV     A,L
+
+        CMP     E
+
+        JZ      ENTER           ;PROCESSED LAST ADDRESS SO DONE
+
+DAGN:   PUSH    H               ;SAVE END ADDR TO USE AGAIN
+
+        INX     D               ;NEXT MEMORY LOCATION TO PRINT
+
+        DCR     C               ;CURRENT PRINT LOCATION COUNTER
+
+        JNZ     DO20            ;16 LOCATIONS PRINTED YET?              
+
+        JMP     DCONT           ;NEXT LINE IF 16 LOCATIONS DONE
+
+
+
+
+; **************************************************************
+
+; PRINT CARRIAGE RETURN AND LINE FEED
+
+; **************************************************************
+CRLF:   MVI     A,0DH
+        CALL    OUTCHK          ;PRINT CHAR TO CONSOLE
+        MVI     A,0AH
+        JMP     OUTCHK          ;PRINT CHAR TO CONSOLE
+
+; **************************************************************
+; BUILD 3/6 OCTAL DIGITS IN HL
+; **************************************************************
+
+OCTL6:  MVI     B,6             ;SET DIGIT COUNTER
+        JMP     OCTL
+OCTL3:  MVI     B,3             ;SET DIGIT COUNTER
+OCTL:   LXI     H,0             ;CLEAR ALL 16 BITS OF HL REG
+AGN:    CALL    INCH            ;GET CHAR FROM CONSOLE
+        MOV     C,A
+        CPI     ' '             ;CHECK FOR SPACE CHAR
+        STC
+        RZ                      ;SPACE CHAR ENTERED SO QUIT
+        ANI     184            ;CHECK FOR VALID OCTAL DIGIT
+        XRI     30H
+        JNZ     ERR             ;NOT OCTAL SO LEAVE
+        MOV     A,C             ;CONVERT ASCII TO BINARY
+        ANI     07H            ;STRIP ASCII
+        DAD     H               ;SHIFT HL LEFT 3 BITS
+        DAD     H
+        DAD     H
+        ADD     L
+        MOV     L,A             ;PUT OCTAL IN H
+        DCR     B               ;MORE DIGITS?
+        JNZ     AGN
+        RET
+
+; **************************************************************
+; PRINT 3 OR 6 OCTAL DIGITS FROM H OR HL
+; **************************************************************
+PRT6:   MVI     B,6             ;SET DIGIT COUNTER
+        XRA     A
+        JMP     NEXT1
+PRT3:   MVI     B,3             ;SET DIGIT COUNTER
+        XRA     A
+        JMP     NXT3
+NEXT3:  DAD     H               ;SHIFT 1 BIT
+NXT3:   RAL
+        DAD     H               ;SHIFT 1 BIT
+        RAL
+NEXT1:  DAD     H               ;SHIFT 1 BIT
+        RAL
+        ANI     7               ;STRIP OFF OCTAL
+        ORI     30H            ;CONVERT TO ASCII
+        CALL    OUTCHK          ;PRINT CHAR TO CONSOLE
+        DCR     B
+        JNZ     NEXT3
+SPACE:  MVI     A,' '           ;ASCII SPACE CHARACTER
+        JMP     OUTCHK          ;PRINT CHAR TO CONSOLE
+
+; **************************************************************
+; INPUT AND ECHO CHARACTER
+; **************************************************************
+INCH:   IN      CONSTAT
+        RRC
+        JNC     INCH            ;CHECK READ STATUS
+        IN      CONDATA         ;READ CHARACTER
+        ANI     7FH            ;STRIP PARITY BIT
+OUTCHK: PUSH    PSW             ;SAVE CHARACTER
+        ADD     C               ;ADD IN CHECKSUM
+        MOV     C,A             ;RESTORE CHECKSUM
+LOOP:   IN      CONSTAT
+        RRC
+        RRC
+        JNC     LOOP            ;GET READ STATUS
+        POP     PSW
+        OUT     CONDATA         ;PRINT USER TYPED CHARACTER
+        RET
+END
+```
+
+## Walkthrough Code
+
+```
+0xFD00: 3E 03      LD A, 0x03
+0xFD02: D3 00      OUT (0x00), A
+0xFD04: 3E 11      LD A, 0x11
+0xFD06: D3 00      OUT (0x00), A
+0xFD08: 31 00 FC   LD SP, 0xFC00 <-- ENTER
+0xFD0B: CD 96 FD   CALL 0xFD96
+0xFD0E: CD 96 FD   CALL 0xFD96
+0xFD11: 3E 2E      LD A, 0x2E
+0xFD13: CD F2 FD   CALL 0xFDF2
+0xFD16: CD E8 FD   CALL 0xFDE8
+0xFD19: FE 4D      CP 0x4D
+0xFD1B: CA 2C FD   JP Z, 0xFD2C
+0xFD1E: FE 44      CP 0x44
+0xFD20: CA 54 FD   JP Z, 0xFD54
+0xFD23: FE 4A      CP 0x4A
+0xFD25: C2 08 FD   JP NZ, 0xFD08 (ENTER)
+0xFD28: CD A0 FD   CALL 0xFDA0
+0xFD2B: E9         JP (HL)
+0xFD2C: CD A0 FD   CALL 0xFDA0
+0xFD2F: C3 33 FD   JP 0xFD33
+0xFD32: 23         INC HL
+0xFD33: CD 96 FD   CALL 0xFD96
+0xFD36: 54         LD D, H
+0xFD37: 5D         LD E, L
+0xFD38: CD C6 FD   CALL 0xFDC6
+0xFD3B: 1A         LD A, (DE)
+0xFD3C: 67         LD H, A
+0xFD3D: CD CC FD   CALL 0xFDCC
+0xFD40: CD A5 FD   CALL FD A5
+0xFD43: EB         EX DE, HL
+0xFD44: DA 32 FD   JP C, FD 32
+0xFD47: 77         LD (HL), A
+0xFD48: BE         CP (HL)
+0xFD49: CA 32 FD   JP Z, FD32
+0xFD4C: 3E 3F      LD A, 3F
+0xFD4E: CD F2 FD   CALL FDF2
+0xFD51: C3 08 FD   JP FD08
+0xFD54: CD A0 FD   CALL FDA0
+
+
+
+
+
+0xFDE3: 3E 20       MVI A, 0x20
+0xFDE5: C3 F2 FD    JMP 0xFDF2
+0xFDE8: DB 00       IN  A, (0x00)
+0xFDEA: 0F          RRC
+0xFDEB: D2 E8 FD    JNC 0xFDE8
+0xFDEE: DB 01       IN  A, (0x01)
+0xFDF0: E6 7F       ANI 0x7F
+0xFDF2: F5          PUSH PSW
+0xFDF3: 81          ADD C
+0xFDF4: 4F          MOV C, A
+0xFDF5: DB 00       IN  A, (0x00)
+0xFDF7: 0F          RRC
+0xFDF8: 0F          RRC
+0xFDF9: D2 F5 FD    JNC 0xFDF5
+0xFDFC: F1          POP PSW
+0xFDFD: D3 01       OUT (0x01), A
+0xFDFF: C9          RET
+```
+
+## TURNMON HEX
+```
+:10FD00003E03D3003E11D3003100FCCD96FDCD96CD
+:10FD1000FD3E2ECDF2FDCDE8FDFE4DCA2CFDFE448C
+:10FD2000CA54FDFE4AC208FDCDA0FDE9CDA0FDC329
+:10FD300033FD23CD96FD545DCDC6FD1A67CDCCFDB8
+:10FD4000CDA5FDEBDA32FD77BECA32FD3E3FCDF2E6
+:10FD5000FDC308FDCDA0FDEBD4E3FDCDA0FDE56224
+:10FD60006BCD96FDCDC6FDCDE3FD0110001A67C534
+:10FD70003E08B9C27EFD3E2DCDF2FDCDE3FDCDCCDA
+:10FD8000FDC1E17CBAC28DFD7DBBCA08FDE5130D46
+:10FD9000C26DFDC35FFD3E0DCDF2FD3E0AC3F2FD17
+:10FDA0000606C3A7FD0603210000CDE8FD4FFE2097
+:10FDB00037C8E6B8EE30C24CFD79E6072929298517
+:10FDC0006F05C2AAFDC90606AFC3D6FD0603AFC3C1
+:10FDD000D3FD291729172917E607F630CDF2FD05BF
+:10FDE000C2D2FD3E20C3F2FDDB000FD2E8FDDB01F5
+:10FDF000E67FF5814FDB000F0FD2F5FDF1D301C98E
+:00000001FF
+```
+## Memory Dump
+```
+0xFD00:
+3E 03 D3 00 3E 11 D3 00 31 00 FC CD 96 FD CD 96 FD 3E 2E CD F2 FD CD E8 FD FE 4D CA 2C FD FE 44
+CA 54 FD FE 4A C2 08 FD CD A0 FD E9 CD A0 FD C3 33 FD 23 CD 96 FD 54 5D CD C6 FD 1A 67 CD CC FD
+CD A5 FD EB DA 32 FD 77 BE CA 32 FD 3E 3F CD F2 FD C3 08 FD CD A0 FD EB D4 E3 FD CD A0 FD E5 62
+6B CD 96 FD CD C6 FD CD E3 FD 01 10 00 1A 67 C5 3E 08 B9 C2 7E FD 3E 2D CD F2 FD CD E3 FD CD CC
+FD C1 E1 7C BA C2 8D FD 7D BB CA 08 FD E5 13 0D C2 6D FD C3 5F FD 3E 0D CD F2 FD 3E 0A C3 F2 FD
+06 06 C3 A7 FD 06 03 21 00 00 CD E8 FD 4F FE 20 37 C8 E6 B8 EE 30 C2 4C FD 79 E6 07 29 29 29 85
+6F 05 C2 AA FD C9 06 06 AF C3 D6 FD 06 03 AF C3 D3 FD 29 17 29 17 29 17 E6 07 F6 30 CD F2 FD 05
+C2 D2 FD 3E 20 C3 F2 FD DB 00 0F D2 E8 FD DB 01 E6 7F F5 81 4F DB 00 0F 0F D2 F5 FD F1 D3 01 C9
 ```
