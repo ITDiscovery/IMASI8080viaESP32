@@ -44,60 +44,33 @@ ENTER:  LXI     SP,STACK        ;INITIALIZE STACK POINTER
 ; **************************************************************
 ; GET JUMP ADDRESS, LOAD TO PC, AND GO
 ; **************************************************************
-
         CALL    OCTL6           ;GET 6 OCTAL DIGITS IN HL
-
         PCHL
-
-
-
 
 ; **************************************************************
 
 ; MEMORY FUNCTION - DISPLAY AND/OR ALTER MEMORY
 
 ; **************************************************************
-
 MEM:    CALL    OCTL6           ;GET 6 OCTAL DIGITS IN HL
-
         JMP     CONT1
-
 CONT:   INX     H               ;POINT TO NEXT ADDRESS
-
 CONT1:  CALL    CRLF            ;PRINT CARRIAGE RET+LINE FEED
-
         MOV     D,H             ;SAVE ADDR TO DE
-
         MOV     E,L
-
         CALL    PRT6            ;CVT TO ASCII + PRINT
-
         LDAX    D               ;LOAD DATA FROM CURRENT MEM LOC
-
         MOV     H,A
-
         CALL    PRT3            ;CVT TO ASCII + PRINT
-
         CALL    OCTL3           ;GET 3 OCTAL DIGITS IN HL
-
         XCHG                    ;EXCHANGE HL AND DE
-
         JC      CONT
-
         MOV     M,A             ;STORE USER SPECIFIED BYTE
-
         CMP     M               ;VALIDATE DATA BYTE IN MEMORY
-
         JZ      CONT            ;IF BYTE OKAY, KEEP GOING
-
 ERR:    MVI     A,'?'           ;WE HAVE A PROBLEM
-
         CALL    OUTCHK          ;PRINT ERROR CHAR TO CONSOLE
-
         JMP     ENTER
-
-
-
 
 ; **************************************************************
 
@@ -106,80 +79,43 @@ ERR:    MVI     A,'?'           ;WE HAVE A PROBLEM
 ; **************************************************************
 
 DMP:    CALL    OCTL6           ;GET 6 OCTAL DIGITS IN HL
-
         XCHG                    ;SAVE START ADDR TO DE
-
         CNC     SPACE
-
         CALL    OCTL6           ;GET 6 OCTAL DIGITS IN HL
-
         PUSH    H               ;SAVE END ADDR
-
 DCONT:  MOV     H,D             ;MOV ADDR IN DE TO HL FOR PRINT
-
         MOV     L,E
-
         CALL    CRLF            ;PRINT CARRIAGE RET+LINE FEED
-
         CALL    PRT6            ;CVT TO ASCII + PRINT
-
         CALL    SPACE
-
         LXI     B,010H          ;PRINT 16 MEM LOCATIONS PER LINE
-
 DO20:   LDAX    D               ;LOAD DATA FROM CURRENT MEM LOC
-
         MOV     H,A
-
         PUSH    B               ;SAVE PRINT LOCATION COUNTER
-
         MVI     A,08H          ;IS HALF THE LINE PRINTED?
-
         CMP     C
-
         JNZ     NXTMEM
-
         MVI     A,'-'           ;MAKES EACH LINE EASIER TO READ
-
         CALL    OUTCHK
-
         CALL    SPACE
-
 NXTMEM: CALL    PRT3            ;CVT TO ASCII + PRINT MEM DATA
-
         POP     B               ;RESTORE PRINT LOCATION COUNTER
-
         POP     H               ;RESTORE END ADDR
-
         MOV     A,H             ;COMPARE CURRENT ADDR WITH END
-
         CMP     D
-
         JNZ     DAGN
-
         MOV     A,L
-
         CMP     E
-
         JZ      ENTER           ;PROCESSED LAST ADDRESS SO DONE
-
 DAGN:   PUSH    H               ;SAVE END ADDR TO USE AGAIN
-
         INX     D               ;NEXT MEMORY LOCATION TO PRINT
-
         DCR     C               ;CURRENT PRINT LOCATION COUNTER
-
         JNZ     DO20            ;16 LOCATIONS PRINTED YET?              
-
         JMP     DCONT           ;NEXT LINE IF 16 LOCATIONS DONE
 
 
-
-
 ; **************************************************************
-
 ; PRINT CARRIAGE RETURN AND LINE FEED
-
 ; **************************************************************
 CRLF:   MVI     A,0DH
         CALL    OUTCHK          ;PRINT CHAR TO CONSOLE
@@ -354,3 +290,26 @@ FD C1 E1 7C BA C2 8D FD 7D BB CA 08 FD E5 13 0D C2 6D FD C3 5F FD 3E 0D CD F2 FD
 6F 05 C2 AA FD C9 06 06 AF C3 D6 FD 06 03 AF C3 D3 FD 29 17 29 17 29 17 E6 07 F6 30 CD F2 FD 05
 C2 D2 FD 3E 20 C3 F2 FD DB 00 0F D2 E8 FD DB 01 E6 7F F5 81 4F DB 00 0F 0F D2 F5 FD F1 D3 01 C9
 ```
+
+SSTEP Before:PC: FD00 Data Bus:3E A:0000 Flags:0000 BC:0000 DE:0000 HL:0000 Stack:0000
+SSTEP Before:PC: FD02 Data Bus:03 A:0003 Flags:0000 BC:0000 DE:0000 HL:0000 Stack:0000
+SSTEP Before:PC: FD04 Data Bus:03 A:0003 Flags:0000 BC:0000 DE:0000 HL:0000 Stack:0000
+SSTEP Before:PC: FD06 Data Bus:11 A:0011 Flags:0000 BC:0000 DE:0000 HL:0000 Stack:0000
+SSTEP Before:PC: FD08 Data Bus:11 A:0011 Flags:0000 BC:0000 DE:0000 HL:0000 Stack:0000
+SSTEP Before:PC: FD0B Data Bus:31 A:0011 Flags:0000 BC:0000 DE:0000 HL:0000 Stack:FC00
+SSTEP Before:PC: FD96 Data Bus:CD A:0011 Flags:0000 BC:0000 DE:0000 HL:0000 Stack:FBFE
+SSTEP Before:PC: FD98 Data Bus:0D A:000D Flags:0000 BC:0000 DE:0000 HL:0000 Stack:FBFE
+SSTEP Before:PC: FDF2 Data Bus:CD A:000D Flags:0000 BC:0000 DE:0000 HL:0000 Stack:FBFC
+SSTEP Before:PC: FDF3 Data Bus:F5 A:000D Flags:0002 BC:0000 DE:0000 HL:0000 Stack:FBFA
+SSTEP Before:PC: FDF4 Data Bus:81 A:000D Flags:0002 BC:0000 DE:0000 HL:0000 Stack:FBFA
+SSTEP Before:PC: FDF5 Data Bus:4F A:000D Flags:0002 BC:000D DE:0000 HL:0000 Stack:FBFA
+SSTEP Before:PC: FDF7 Data Bus:00 A:0003 Flags:0002 BC:000D DE:0000 HL:0000 Stack:FBFA
+SSTEP Before:PC: FDF8 Data Bus:0F A:0081 Flags:0002 BC:000D DE:0000 HL:0000 Stack:FBFA
+SSTEP Before:PC: FDF9 Data Bus:0F A:00C0 Flags:0002 BC:000D DE:0000 HL:0000 Stack:FBFA
+SSTEP Before:PC: FDFC Data Bus:D2 A:00C0 Flags:0002 BC:000D DE:0000 HL:0000 Stack:FBFA
+SSTEP Before:PC: FDFD Data Bus:F1 A:0000 Flags:0002 BC:000D DE:0000 HL:0000 Stack:FBFC
+SSTEP Before:PC: FDFF Data Bus:00 A:0000 Flags:0002 BC:000D DE:0000 HL:0000 Stack:FBFC
+SSTEP After:PC: 009B Data Bus:C9 A:0000 Flags:0002 BC:000D DE:0000 HL:0000 Stack:FBFE
+
+0xFBF0:D9 CA A7 9A 5E 62 77 45 F7 1D 02 00 9B 00 0E 00
+
