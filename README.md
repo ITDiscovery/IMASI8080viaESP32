@@ -141,6 +141,28 @@ Looks like the Blinkenlights is what I am looking for. I'll be looking to create
 Blinkinlights API. Since the board I am making can run off of Data Clock and Latch (and I'm gonna see if Clock can be shared between
 Input and Output, so I can narrow it down to 5 GPIO lines.
 
+
+ESP32 to Blinkenlight:
+| Name | H2 Pin | ESP32Pin |
+|-----|------|----- |
+| LEDData |36|1|
+| LEDLatch |38|2|
+| LEDClock |40|3|
+| SWClock |37|4|
+| SWData |35|5|
+| SWLatch|33|6|
+| SDA |3|13|
+| SCL |5|14|
+| Ain |31|17|
+| Aout|29|16|
+| MOSI |19|39|
+| MISO |21|38|
+| SClk |23|40|
+| CS |24|37|
+| RX |8|11|
+| TX |10|12|
+
+
 http://retrocmp.com/projects/blinkenbone/172-blinkenbone-high-level-interface-api-to-panels
 
 Blinkinlights EXE:
