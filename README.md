@@ -148,9 +148,9 @@ ESP32 to Blinkenlight:
 | LEDData |36|1|
 | LEDLatch |38|2|
 | LEDClock |40|3|
-| SWClock |37|4|
-| SWData |35|5|
-| SWLatch|33|6|
+| SWClock |37|5|
+| SWData |35|7|
+| SWLatch|33|4|
 | SDA |3|13|
 | SCL |5|14|
 | Ain |31|17|
