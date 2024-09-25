@@ -162,6 +162,8 @@ ESP32 to Blinkenlight:
 | RX |8|11|
 | TX |10|12|
 
+Note: As the only input line, SWData must be level converted. The low output levels (3.3V) of the remaining signals will "respected" by the TTL inputs.
+
 
 http://retrocmp.com/projects/blinkenbone/172-blinkenbone-high-level-interface-api-to-panels
 
