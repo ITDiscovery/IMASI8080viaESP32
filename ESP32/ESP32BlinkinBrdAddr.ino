@@ -5,11 +5,11 @@
 ////Pin connected to SER (Pin 14) of 1st 74HC595
 #define LdataPin 1
 //Pin connected to PL! (Pin 1) of 74HCT165
-#define SlatchPin 6
+#define SlatchPin 7
 //Pin connected to CP (Pin 2) of 74HCT165
-#define SclockPin 4
+#define SclockPin 5
 //Pin connected to Q7 (Pin 9) of 1st 74HCT165
-#define SdataPin 5
+#define SdataPin 4
 
 enum State { 
   HLDA, WAIT, WO /*was INTE*/, STACK /*PROT*/, MEMR, INP, 
@@ -115,6 +115,9 @@ void readSwitches() {
   switches.prev_control = switches.control; ////remember previous value
   switches.address = (ah<<8) + al;
   switches.control = (ch<<8) + cl;
+  bus.address = switches.address;
+  bus.state = ch;
+  bus.option = cl;
 }
 void setup() {
   Serial.begin(115200);
@@ -131,10 +134,8 @@ void loop() {
   readSwitches();
   Serial.print(" Switch Addr:");
   Serial.print(switches.address,HEX);
-  Serial.print(" State:");
-  Serial.println(bus.state,BIN);
-  bus.address = switches.address;
-  bus.option = switches.address >> 8;
+  Serial.print(" Switches Control:");
+  Serial.println(switches.control,HEX);
   writeLEDs();
   delay(100);
  }
