@@ -129,10 +129,14 @@ Note: Implementing "new" hardware is via i8080_in and i8080_out which has a swit
 Currently Implemented:
 
 Port 0x00 in: Sends back 0x00
+
 Port 0x01: term_in/term_out in main.c
+
 Port 0x06 and 0x07: Cassette Port (not implemented)
+
 Port 0x08,0x09,0x0A: Disk Controller
-Port 0x10,0x11: 2SIO Port 1 (needs to go to sockets, not serial) 
+
+Port 0x10,0x11: 2SIO Port 1 (needs to go to sockets, not serial)
 
 Update: Dumped the TM1638, as it had trouble dealing with more than a few switches on at the same time, especially with 7-Segments
 connected. 
