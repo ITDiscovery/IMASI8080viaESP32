@@ -141,11 +141,6 @@ Port 0x10,0x11: 2SIO Port 1 (needs to go to sockets, not serial)
 Update: Dumped the TM1638, as it had trouble dealing with more than a few switches on at the same time, especially with 7-Segments
 connected. 
 
-Looks like the Blinkenlights is what I am looking for. I'll be looking to create a board that I can get it to read off the
-Blinkinlights API. Since the board I am making can run off of Data Clock and Latch (and I'm gonna see if Clock can be shared between
-Input and Output, so I can narrow it down to 5 GPIO lines.
-
-
 ESP32 to Blinkenlight:
 | Name | H2 Pin | ESP32Pin |
 |-----|------|----- |
