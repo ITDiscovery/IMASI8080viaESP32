@@ -142,7 +142,7 @@ Update: Dumped the TM1638, as it had trouble dealing with more than a few switch
 connected. 
 
 ESP32 to Blinkenlight:
-| Name | H2 Pin | ESP32Pin |
+| Name | H2 Pin | ESP32-S3-Zero Pin |
 |-----|------|----- |
 | LEDData |36|1|
 | LEDLatch |38|2|
@@ -150,16 +150,17 @@ ESP32 to Blinkenlight:
 | SWClock |37|5|
 | SWData |35|4|
 | SWLatch|33|7|
-| SDA |3|13|
-| SCL |5|14|
-| Ain |31|17|
-| Aout|29|16|
-| MOSI |19|39|
-| MISO |21|38|
-| SClk |23|40|
-| CS |24|37|
-| RX |8|11|
-| TX |10|12|
+| SDA |3|8|
+| SCL |5|9|
+| Ain |31|  |
+| Aout|29|9|
+| MOSI |19|11|
+| MISO |21|13|
+| SClk |23|12|
+| CS |24|10|
+| RX |8|44|
+| TX |10|43|
+
 
 Note: As the only input line, SWData must be level converted. The low output levels (3.3V) of the remaining signals will "respected" by the TTL inputs.
 
