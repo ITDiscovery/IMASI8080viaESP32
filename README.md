@@ -153,13 +153,13 @@ ESP32 to Blinkenlight:
 | SDA |3|8|
 | SCL |5|9|
 | Ain |31|  |
-| Aout|29|9|
+| Aout|29|7|
 | MOSI |19|11|
 | MISO |21|13|
 | SClk |23|12|
 | CS |24|10|
-| RX |8|44|
-| TX |10|43|
+| RX |8|14|
+| TX |10|15|
 
 
 Note: As the only input line, SWData must be level converted. The low output levels (3.3V) of the remaining signals will "respected" by the TTL inputs.
