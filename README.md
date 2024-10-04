@@ -160,7 +160,7 @@ ESP32 to Blinkenlight:
 | CS |24|10|
 | RX |8|14|
 | TX |10|15|
-
+| Built In LED| |21|
 
 Note: As the only input line, SWData must be level converted. The low output levels (3.3V) of the remaining signals will "respected" by the TTL inputs.
 
