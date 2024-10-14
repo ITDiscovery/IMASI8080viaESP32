@@ -112,18 +112,20 @@ H2 (Switch) Connections:
 |H2-11 |A10|H2-12 |A11|
 |H2-13 |A12|H2-14 |A13|
 |H2-15 |A14|H2-16 |A15|
-|H2-17 |Stop|H2-18 |Run|
-|H2-19 |S-Step|H2-20 |S-Step Down|
-|H2-21 |Examoine|H2-22 |Examine Next|
-|H2-23 |Depost|H2-24 |Deposit Next|
-|H2-25 |Reset|H2-26 |Clr|
+|H2-17 |Examine|H2-18 |Examine_Next|
+|H2-19 |Deposit|H2-20 |Deposit_Next|
+|H2-21 |Reset|H2-22 |Clr|
+|H2-23 |Run|H2-24 |Stop|
+|H2-25 |Single_Step|H2-26 |Single_Step_|
 |H2-27 |Protect|H2-28 |Unprotect|
-|H2-39 |Aux Up|H2-30 |Aux Down|
-|H2-31 |Aux1 Up|H2-32 |Aux1 Down|
+|H2-39 |Aux1 Up|H2-30 |Aux1 Down|
+|H2-31 |Aux2 Up|H2-32 |Aux2 Down|
 |H2-33 |+5V|H2-34 |Gnd|
 |H2-35 |+5V|H2-36 |Gnd|
 |H2-37 |+5V|H2-38 |Gnd|
 |H2-39 |+5V|H2-40 |Gnd|
+
+The above Control switch order can be changed by editing the enum of Control declaration.
 
 Note: Implementing "new" hardware is via i8080_in and i8080_out which has a switch/case based on the port number.
 Currently Implemented:
