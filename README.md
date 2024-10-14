@@ -154,7 +154,7 @@ ESP32 to Blinkenlight:
 | SWLatch|33|6|
 | SDA |3|8|
 | SCL |5|9|
-| Ain |31|  |
+| Ain |31|17|
 | Aout|29|7|
 | MOSI |19|11|
 | MISO |21|13|
