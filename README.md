@@ -165,6 +165,7 @@ ESP32 to Blinkenlight:
 | Built In LED| |21|
 
 Note: As the only input line, SWData must be level converted. The low output levels (3.3V) of the remaining signals will "respected" by the TTL inputs.
+Note: Using 10-13 for the SPI will require a change to the pins_arduino.h for the Waveshare board, found at: /Users/...../Library/Arduino15/packages/esp32/hardware/esp32/3.0.7/variants/waveshare_esp32_s3_zero
 
 
 http://retrocmp.com/projects/blinkenbone/172-blinkenbone-high-level-interface-api-to-panels
