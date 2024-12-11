@@ -1,17 +1,18 @@
-extern "C" {
-  #include "i8080.h"
-  #include "88dcdd.h"
-}
 #include <SPI.h>
 #include <SD.h>
 #include <WiFi.h>
 
+extern "C" {
+  #include "i8080.h"
+}
+
 // Replace with your network credentials
-const char* ssid = "skylernet";
-const char* password = "tilt0waitsplunDger";
+const char* ssid = "XXXXXXXXXX";
+const char* password = "XXXXXXXXXXXXX";
 
 //#define DEBUG
 //#define DEBUGIO
+//#define DISK_DEBUG
 
 //Pin Connection Defines
 //Pin connected to RClk (Pin 12) of 74HC595
@@ -47,10 +48,9 @@ const char* password = "tilt0waitsplunDger";
 //13 is MISO
 //12 is SClk
 
-// Switch Clock Delay
-#define Cdelay 10
-#define ISKIP 1000
-
+// Switch Clock and Latch Delay
+#define Cdelay 4
+#define Ldelay 1
 
 //MEMR--The memory bus will be used for memory read data.
 //INP--The address bus contains the address of an input device
@@ -131,6 +131,45 @@ struct {
   uint8_t rxdata;
   uint8_t txdata;
 } uartx00,uartx04,uartx10,uartx12,uartx20,uartx22;
+
+//Disk Subsystem based on: https://github.com/dankar/altair8800/
+#define STATUS_ENWD			1
+#define STATUS_MOVE_HEAD	2
+#define STATUS_HEAD			4
+#define STATUS_IE			32
+#define STATUS_TRACK_0		64
+#define STATUS_NRDA			128
+
+#define CONTROL_STEP_IN		1
+#define CONTROL_STEP_OUT	2
+#define CONTROL_HEAD_LOAD	4
+#define CONTROL_HEAD_UNLOAD 8
+#define CONTROL_IE			16
+#define CONTROL_ID			32
+#define CONTROL_HCS			64
+#define CONTROL_WE			128
+
+#define SECTOR 137UL
+#define TRACK (32UL*SECTOR)
+
+typedef struct
+{
+	File fp;
+	uint8_t track;
+	uint8_t sector;
+	uint8_t status;
+	uint8_t write_status;
+} disk_t;
+
+typedef struct
+{
+	disk_t disk1;
+	disk_t disk2;
+	disk_t nodisk;
+	disk_t *current;
+} disks;
+
+disks disk_drive;
 
 //Echo for SIO 
 //https://www.penguinstew.ca/Writings/60/Computers/Programming/Projects/Altair%208800/Serial%20Echo
@@ -291,9 +330,9 @@ void readSwitches() {
    
   //Write Pulse to Latch Pin
    digitalWrite(SlatchPin, LOW);
-   delayMicroseconds(5);
+   delayMicroseconds(Ldelay);
    digitalWrite(SlatchPin, HIGH);
-   delayMicroseconds(5);
+   delayMicroseconds(Ldelay);
 
   // Now get data from 74HC165
    for(int i = 0; i < 8; i++)
@@ -302,7 +341,7 @@ void readSwitches() {
         al |= (bitVal << (7 - i));
 
         digitalWrite(SclockPin, HIGH);
-        delayMicroseconds(10);
+        delayMicroseconds(Cdelay);
         digitalWrite(SclockPin, LOW);
     }
    for(int i = 0; i < 8; i++)
@@ -311,7 +350,7 @@ void readSwitches() {
         ah |= (bitVal << (7 - i));
 
         digitalWrite(SclockPin, HIGH);
-        delayMicroseconds(10);
+        delayMicroseconds(Cdelay);
         digitalWrite(SclockPin, LOW);
     }
    for(int i = 0; i < 8; i++)
@@ -320,7 +359,7 @@ void readSwitches() {
         cl |= (bitVal << (7 - i));
 
         digitalWrite(SclockPin, HIGH);
-        delayMicroseconds(10);
+        delayMicroseconds(Ldelay);
         digitalWrite(SclockPin, LOW);
     }
 
@@ -330,7 +369,7 @@ void readSwitches() {
         ch |= (bitVal << (7 - i));
 
         digitalWrite(SclockPin, HIGH);
-        delayMicroseconds(10);
+        delayMicroseconds(Ldelay);
         digitalWrite(SclockPin, LOW);
     }
   switches.prev_control = switches.control; ////remember previous value
@@ -434,14 +473,16 @@ extern "C" {
     bitClear(bus.state,IOUT);
     bitClear(bus.state,WO);
     bitClear(bus.state,MEMR);
-    writeLEDs();
+
+    unsigned int seek;
+	  unsigned char ret_val;
   
     switch (port) {
       case 0x00:     // CPU Board 88-SIO Status --> Serial1
        return uartx00.ustate;
       case 0x01:     // CPU Board 6850 Serial Port read/RX--> Serial1      
         //Reading a character, so set RDRF unless there is more to get
-        if (Serial.available()==0) {
+        if (Serial2.available()==0) {
           bitSet(uartx00.ustate,RDRF);
         }
         return uartx00.rxdata;
@@ -459,19 +500,53 @@ extern "C" {
         Serial.print(i8080_regs_a(),HEX);
         Serial.println();
         return 0xFF;
-      case 0x08: 
-        return disk_status();
-      case 0x09:
-        return disk_sector();
-      case 0x0A: 
-        return disk_read();
+      case 0x08: //88-DCDD Disk Status
+        #ifdef DISK_DEBUG
+	      Serial.print("Returning status ");
+	      Serial.print(disk_drive.current->status);
+	      Serial.println(" for disk");
+        #endif
+	      return disk_drive.current->status;
+      case 0x09: //88-DCDD Disk Sector
+      	if(disk_drive.current->sector == 32) disk_drive.current->sector = 0;
+      	//current_sector = current_sector % 32;
+	      seek = disk_drive.current->track * TRACK + disk_drive.current->sector * (SECTOR);
+	      disk_drive.current->fp.seek(seek);
+	      ret_val = disk_drive.current->sector << 1;
+        #ifdef DISK_DEBUG  
+        Serial.print("Current sector: ");
+	      Serial.print(disk_drive.current->sector);
+	      Serial.print(" (");
+	      Serial.print(ret_val, HEX);
+	      Serial.print(") (bytes per track: ");
+	      Serial.print(TRACK);
+	      Serial.println(")");
+        #endif
+	      disk_drive.current->sector++;
+	      return ret_val;
+      case 0x0A: //88-DCDD Disk Read
+        ret_val = disk_drive.disk1.fp.read();
+	      //ret_val = disk_drive.current->fp.read();
+	      seek++;
+        #ifdef DISK_DEBUG
+        Serial.print("Reading byte ");
+        Serial.print(seek);
+        Serial.print(" (");
+        Serial.print(ret_val,HEX);
+        Serial.println(")");
+        #endif
+	      return ret_val;
       case 0x10: // 88-2SIO or 88-ACR port 0, Status --> Serial
+       Serial2.print("Port 10 In:");
+       Serial2.println(uartx10.ustate,HEX);
        return uartx10.ustate;
       case 0x11:     // CPU Board 6850 Serial Port read/RX--> Serial1      
         //Reading a character, so set RDRF unless there is more to get
         if (Serial.available()==0) {
           bitClear(uartx10.ustate,RDRF);
         }
+        Serial2.print("Port 11 In:");
+        Serial2.println(uartx10.rxdata,HEX);
         return uartx10.rxdata;
       case 0x12: // 88-2SIO or 88-ACR port 1, Status
         return uartx12.ustate;
@@ -528,7 +603,6 @@ extern "C" {
     bitSet(bus.state,IOUT);
     bitSet(bus.state,WO);
     bitClear(bus.state,MEMR);
-    writeLEDs();
 
     #ifdef DEBUGIO
     Serial.print("Out Port:");
@@ -539,6 +613,8 @@ extern "C" {
 
     //Put the data on the bus
     bus.data = vale;
+    unsigned int seek;
+	  unsigned char ret_val;
 
     switch (port) {
     case 0x00: // CPU Board 6850 Serial Port Status --> Serial
@@ -548,9 +624,15 @@ extern "C" {
       //Bit 7 - RX Interrupt Enable
       //It's usually 0x43
       //Should check if Bit 7 is set 
+      if (vale==3) {
+        Serial2.println("88-SIO Reset");
+      } else {
+        Serial2.print("88-SIO: ");
+        Serial2.println(vale,HEX);
+      }
       return;
     case 0x01: // CPU Board 6850 Serial write/TX --> Serial
-      Serial.write(vale & 0x7F);
+      Serial2.write(vale & 0x7F);
       return;
     case 0x06: // 88-ACR Board Cassette
       Serial.print("Cassette Port Out 0x06, Data:");
@@ -560,21 +642,78 @@ extern "C" {
       Serial.print("Cassette Port Out 0x07, Data:");
       Serial.print(i8080_regs_a(),HEX);
       Serial.println();
-    case 0x08:
-      disk_select(vale);
+    case 0x08: //88-DCDD Disk Select
+      ret_val = vale & 0xf;
+	    if(ret_val == 0) {
+	      disk_drive.current = &disk_drive.disk1;
+	    } else if(ret_val == 1) {
+		    disk_drive.current = &disk_drive.disk2;
+	    } else {
+		    disk_drive.current = &disk_drive.nodisk;
+	    }
       return;
-    case 0x09:
-      disk_function(vale);
+    case 0x09: //88-DCDD Disk Function
+      #ifdef DISK_DEBUG
+	    Serial.print("Disk function ");
+	    Serial.println(vale);
+      #endif
+	    if(vale & CONTROL_STEP_IN) {
+		    disk_drive.current->track++;
+		    if(disk_drive.current->track != 0) {
+          disk_drive.current->status |= STATUS_TRACK_0;
+        }
+		    disk_drive.current->fp.seek(TRACK * disk_drive.current->track);
+        #ifdef DISK_DEBUG
+		    Serial.print("Track seek to : ");
+		    Serial.println(TRACK * disk_drive.current->track);
+        #endif
+    	}
+	    if(vale & CONTROL_STEP_OUT) {
+		    if(disk_drive.current->track > 0) disk_drive.current->track--;
+		    if(disk_drive.current->track == 0) disk_drive.current->status &= ~STATUS_TRACK_0;
+		    disk_drive.current->fp.seek(TRACK * disk_drive.current->track);
+        #ifdef DISK_DEBUG
+        Serial.print("Track seek to : ");
+        Serial.println(TRACK * disk_drive.current->track);
+        #endif
+    	}
+	    if(vale & CONTROL_HEAD_LOAD) {
+    		disk_drive.current->status &= ~STATUS_HEAD;
+		    disk_drive.current->status &= ~STATUS_NRDA;
+    	}
+	    if(vale & CONTROL_HEAD_UNLOAD) disk_drive.current->status |= STATUS_HEAD; 
+	    if(vale & CONTROL_IE) { }
+    	if(vale & CONTROL_ID) { }
+    	if(vale & CONTROL_HCS) { }
+    	if(vale & CONTROL_WE) {
+    		disk_drive.current->status &= ~STATUS_ENWD;
+		    disk_drive.current->write_status = 0;
+	    }
       return;
-    case 0x0A:
-      disk_write(vale);
+    case 0x0A: //88-DCDD Disk Write
+      #ifdef DISK_DEBUG
+      Serial.print("Write ");
+      Serial.print(vale);
+      Serial.print(" (byte in sector: ");
+      Serial.print(disk_drive.current->write_status);
+      Serial.println(")");
+      #endif
+	    disk_drive.current->fp.write(&vale, 1);
+	    if(disk_drive.current->write_status == 137) {
+    		disk_drive.current->write_status = 0;
+		    disk_drive.current->status |= STATUS_ENWD;
+        #ifdef DISK_DEBUG
+		    Serial.println("Disabling clear");
+        #endif
+	    }	else disk_drive.current->write_status++;
+      Serial.println("Disk Write");
       return;
     case 0x10: // 88-2SIO or 88-ACR port 0, Control Serial1
       if (vale==3) {
-        Serial.println("88-2SIO Reset");
+        Serial2.println("88-2SIO Reset");
       } else {
-        Serial.print("88-2SIO: ");
-        Serial.println(vale,HEX);
+        Serial2.print("88-2SIO: ");
+        Serial2.println(vale,HEX);
       }
       return;
     case 0x11: // 88-2SIO or 88-ACR port 0, Write/TX Serial1
@@ -740,11 +879,12 @@ void setup() {
   IPAddress ip = WiFi.localIP();
   Serial.println(ip);
   
-  Serial1.begin(38400, SERIAL_8N1, Serial2RX, Serial2TX);
+  Serial2.begin(38400, SERIAL_8N1, Serial2RX, Serial2TX);
   #ifdef DEBUG
   Serial.println("Output on Serial");
-  Serial1.println("Output on Serial1");
+  Serial2.println("Output on Serial2");
   #endif
+
   // Let's start with the SIO cards returning 0xFF if empty
   //88-SIO Bit 7 is low for Ready to Send
   uartx00.ustate = 0x0D; //RDRF-off TDRE-on, DCD-on, CTS-on, IRQ=off
@@ -764,6 +904,7 @@ void setup() {
   //All Flags off
   bus.state = 0x00;
   bitSet(bus.state,WAIT);
+  bitSet(bus.state,USER3);
   
   //Copy TURNMON and DBLROM ROMs to RAM
   Serial.println("Loading UBMON/DBLROM");
@@ -799,14 +940,15 @@ void loop() {
   //Look for Serial Port Data -- 88-SIO
   //Bit 0 is low that Data has been recieved
   //Check to see if there is already data, don't read again
-  if (Serial1.available()) {
-    uartx00.rxdata = Serial1.read();
+  if (Serial2.available()) {
+    uartx00.rxdata = Serial2.read();
     bitClear(uartx00.ustate,RDRF);
   }
   //Look for Serial Port Data -- 88-2SIO
   //Bit 0 is high that Data has been recieved
-  //Check to see if there is already data, don't read again
-  if (Serial.available()) {
+  //Check to see if there is already data, don't read
+  //again if buffer is still full
+  if (Serial.available() && !(bitRead(uartx10.ustate,RDRF)) ) {
     if bitRead(bus.state,INTE) {
       //When doing an interrtupt
       int clkcycles = i8080_interrupt(0xFF);
@@ -869,9 +1011,9 @@ void loop() {
     bitClear(bus.state,INTE);
     bitClear(bus.state,HLDA);
     bitSet(bus.state,WAIT);
-    File root;
-    root = SD.open("/");
-    printDirectory(root, 0);
+    //File root;
+    //root = SD.open("/");
+    //printDirectory(root, 0);
   }
 
   if (onRelease(SINGLE_STEP)) {
@@ -891,7 +1033,7 @@ void loop() {
   if (onRelease(PROTECT)) {
      Serial.println("PROTECT");  
      bitSet(bus.state,PROT);
-     Serial.println("Loading 88-SIO Int Echo");
+     Serial.println("Loading 88-2SIO Int Echo");
      for (int i=0; i < 64; i++) {
        CPUMemory[i] = Echo2SIOInt[i];
      }
@@ -901,24 +1043,24 @@ void loop() {
   if (onRelease(UNPROTECT)) {
     Serial.println("UNPROTECT");
     bitClear(bus.state,PROT);
-    Serial.println("Loading 88-2SIO Echo");
-    for (int i=0; i < 21; i++) {
-       CPUMemory[i] = Echo2SIO[i];
+    Serial.println("Loading 88-SIO Echo");
+    for (int i=0; i < 13; i++) {
+       CPUMemory[i] = EchoSIO[i];
     }
     examine(0x0000);
     bitClear(bus.state,WAIT);
   }
   if (onRelease(AUX1_UP)) {
      Serial.println("AUX1_UP");
-     Serial.print("Bus Addr: ");
-     Serial.print(bus.address,HEX);
-     Serial.print(" Switch Addr:");
-     Serial.print(switches.address,HEX);
-     Serial.print(" Data:");
-     Serial.print(bus.data);
-     Serial.print(" State:");
-     Serial.println(bus.state,BIN);
-     readPage(bus.address);
+     if (bitRead(bus.state,USER3)) {
+        Serial.println("LED Update Off");
+        bitClear(bus.state,USER3);
+        writeLEDs();
+     } else {
+        Serial.println("LEDs Update On");
+        bitSet(bus.state,USER3);
+     }
+
   }
   if (onRelease(AUX1_DOWN)) {
      Serial.println("AUX1_DOWN");  
@@ -931,35 +1073,40 @@ void loop() {
      bitClear(bus.state,WAIT);
   }
   if (onRelease(AUX2_UP)) {
-     Serial.println("AUX2_UP");  
-     Serial.println("Loading Altair Basic..");
-     disk_drive.disk1.fp = SD.open("/ALTAIRDSK.DSK", FILE_WRITE);
-     disk_drive.disk2.fp = SD.open("/BDSC.DSK", FILE_WRITE);
-     if(!disk_drive.disk2.fp || !disk_drive.disk1.fp)
-        Serial.println("ERR:dsk");
-     disk_drive.nodisk.status = 0xff;
-     examine(0xff00);
-     bitClear(bus.state,WAIT);
+    Serial.println("AUX2_UP");  
+    Serial.println("Loading Altair Basic..");
+    disk_drive.disk1.fp = SD.open("/ALTAIRDOS.DSK", FILE_READ);
+    disk_drive.disk2.fp = SD.open("/BDSC.DSK", FILE_READ);
+    if(!disk_drive.disk2.fp || !disk_drive.disk1.fp) {
+      Serial.println("ERR:dsk");
+      disk_drive.nodisk.status = 0xff;
+    } else { 
+      examine(0xff00);
+      disk_drive.current = &disk_drive.disk1;
+      bitClear(bus.state,WAIT);
+    }
   }
   if (onRelease(AUX2_DOWN)) {
-     Serial.println("AUX2_DOWN");
-     disk_drive.disk1.fp = SD.open("/CPM63K.DSK", FILE_WRITE);
-     disk_drive.disk2.fp = SD.open("/ZORK.DSK", FILE_WRITE);
-     if(!disk_drive.disk2.fp || !disk_drive.disk1.fp)
-        Serial.println("ERR:dsk");
-     disk_drive.nodisk.status = 0xff;
-     examine(0xff00);
-     bitClear(bus.state,WAIT);
+    Serial.println("AUX2_DOWN");
+    disk_drive.disk1.fp = SD.open("/CPM63K.DSK", FILE_READ);
+    disk_drive.disk2.fp = SD.open("/ZORK.DSK", FILE_READ);
+    if(!disk_drive.disk2.fp || !disk_drive.disk1.fp) {
+      Serial.println("ERR:dsk");
+      disk_drive.nodisk.status = 0xff;
+    } else {
+      disk_drive.current = &disk_drive.disk1;
+      examine(0xff00);
+      bitClear(bus.state,WAIT);
+    }
   }  
   if (!bitRead(bus.state,WAIT)) {
-    //for (int i=0; i < ISKIP; i++) {
       i8080_instruction();
     //  }
   }
   if (bitRead(bus.state,USER4)) {
-    i8080_instruction();
+    //i8080_instruction();
     CPUStatus();
-    delay(1000);
+    //delay(1000);
   }
-  writeLEDs();
+  if (bitRead(bus.state,USER3)) writeLEDs();
 }
