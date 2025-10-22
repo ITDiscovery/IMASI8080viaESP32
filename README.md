@@ -34,7 +34,7 @@ The project relies on these libraries, which must be installed via the Arduino L
 | **`SPI`** | Communication with SPI devices (e.g., SD Card) |
 | **`SD`** | Handling the SD card for disk images |
 | **`WiFi`** | Network connectivity |
-| **`Adafruit_NeoPixel`** | Controlling NeoPixel-based front panel lights |
+| **`Adafruit_NeoPixel`** | Controls the built in LED on the ESP32|
 
 ### 3. Build and Flash Steps
 
