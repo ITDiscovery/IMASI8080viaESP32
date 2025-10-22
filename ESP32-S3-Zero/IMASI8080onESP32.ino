@@ -13,8 +13,8 @@ extern "C" {
 #include "disk.h"
 
 // Replace with your network credentials
-const char* ssid = "skylernet";
-const char* password = "tilt0waitsplunDger";
+const char* ssid = "XXXXXX";
+const char* password = "XXXXXXXXX";
 
 //#define DEBUG
 //#define DEBUGIO
