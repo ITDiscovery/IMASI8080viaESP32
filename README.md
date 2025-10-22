@@ -1,195 +1,239 @@
-# IMASI8080onESP32
-I created a small board the also has a mini "mock up" of an Altair 8800 front panel via DIP switches and LED bar graphs.
-The board has two 40 pin connectors to wire up to external LEDs and switches.
+# IMASI8080viaESP32
 
-Design Goals:
-1. Use the ESP32 and add the required I/O 74HCT165 (input) and 74LS595 (output) -the AVR128 was dropped due to speed issues.
-1. Would be nice to have it connectable to a Raspberry Pi.
-1. Make smaller Blinkin Boards to extend? Such as a 7-Segment to show address and data bus values.
-1. Would be nice to allow it to emulate a PDP-8 also.
+This project creates an emulator of an **IMSAI 8080** front panel experience using an **ESP32** microcontroller. It leverages TTL shift registers to connect a large number of DIP switches and LED bars via a custom BlinklinLights PCB. While this project's goal is to create a complete representation, the software and hardware can be leveraged for many other uses.
 
-Had to dump the idea of using AVR128DB28 Flash...newly posted specs show only a 1K cycle. RevB and on uses a 23LC512 (much slower, and uses an additional 4 pins from the AVR, but using an AVR64DB28 is now possible).
+---
 
-RevA boards would need too many mods.
-RevB boards will need to a mod to go from Pin 1 of U2 to Pin 24 of H3.
-RevC boards use the ESP32 and drop the 23LC512
+## 🌟 Design Goals
 
-ToDo:
-1. I can now add WiFi via SSH to this.
-2. Serial needs work
-3. Needs lots of speed ups.
+1.  Use the **ESP32** and add the required I/O via **74HCT165** (input) and **74LS595** (output) shift registers. (The AVR128 was dropped due to the need to leverage external memory, which made the whole design too slow).
+2.  Enable connectivity to a **Raspberry Pi** for enhanced functionality.
+3.  Create smaller "Blinkin Boards" to extend the display, such as a 7-Segment module to show address and data bus values.
+4.  Allow for emulation of other classic machines, such as a **PDP-8**.
 
-3D Printer Toggle Paddles, Switch and LED Mounts:
-https://www.thingiverse.com/thing:5627711
+---
 
-Programming Bit Reference:
+## 🛠️ Build and Setup Instructions
 
-LED Data (PIN_PD2):
+This section outlines the steps required to build and flash the firmware for the **RevB** (Current Working) version.
 
-Bit 0 - 15
-| 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10| 11| 12| 13| 14| 15| 
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| D0| D1| D2| D3| D4| D5| D6| D7|INT| WO|Stack|HLTA|OUT|M1|INP|MEMR|
+### 1. Prerequisites
 
-- INTA: Interupt request has been acknowledged (not implemented)
-- WO: Write to memory or output port.
-  - Implemented by setting bus_state.WO in i8080_out, i8080_mwrite, i8080_pairwrite
-  - Implemented by clearing bus_state.WO in i8080_in, i8080_mread, i8080_pairread
-- STACK: The address buss hold's the stack pointer (not implemented)
-- HLTA: A HALT instruction has been acknowledged
-- OUT: Out to port
-  - Implemented by setting bus_state.OUT in intel8080_out
-  - Implemented by clearing bus_stat.OUT in intel8080_in, i8080_mwrite, i8080_mread
-- M1: The CPU is performing the 1st cycle of the instruction (not implemented)
-- INP: In from port.
-  - Implemented by setting bus_state.INP in intel8080_in
-  - Implemented by clearing bus_stat.INP in intel8080_out, i8080_mwrite, i8080_mread
-- MEMR: The memory bus is being used.
-  - Implemented by setting bus_state.MEMR in i8080_mwrite, i8080mread
-  - Implemented by clearing bus_state.MEMR in i8080_in, i8080_out 
+You'll need the following installed on your development machine:
 
-Bit 16 - 32
-| 16| 17| 18| 19| 20| 21| 22| 23| 24| 25| 26| 27| 28| 29| 30| 31|
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| A0| A1| A2| A3| A4| A5| A6| A7| A8| A9|A10|A11|A12|A13|A14|A15|
+* **Arduino IDE** (or PlatformIO).
+* **ESP32 Board Support Package** for the Arduino IDE.
+* **Git** for cloning the repository.
 
-Bit 32-39
-| 32| 33| 34| 35| 36| 37| 38| 39|
-|---|---|---|---|---|---|---|---|
-|PROT|INTE|WAIT|HLDA|User1|User2|User3|User4|
+### 2. Required Libraries
 
-- PROT: The memory is protected (not implemented)
-- INTE: An interupted has been generated
-   - Implemented by setting bus_state.INTE on i8080_ei
-   - Implemented by clearing bus_state.INTE on i8080_di
-- WAIT: CPU is in a WAIT state (not implemented)
-- HLDA/RUN: A Hold has been acknowledged.
-  - Implemented by clearing the bus_state.HLDA on i8080_HLT
-  - Implemented by setting the bus_state.HLDA on Run Mode
-- User4 - User1: Send 4 bits OUT to Port 0xFF 
+The project relies on these libraries, which must be installed via the Arduino Library Manager:
 
-Switch Data (PIN_PD5):
+| Library | Purpose |
+| :--- | :--- |
+| **`SPI`** | Communication with SPI devices (e.g., SD Card) |
+| **`SD`** | Handling the SD card for disk images |
+| **`WiFi`** | Network connectivity |
+| **`Adafruit_NeoPixel`** | Controlling NeoPixel-based front panel lights |
 
-BIT 0-15
-| 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10| 11| 12| 13| 14| 15| 
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| A0| A1| A2| A3| A4| A5| A6| A7| A8| A9|A10|A11|A12|A13|A14|A15|
+### 3. Build and Flash Steps
 
-Bit 16 - 32
-| 16| 17| 18| 19| 20| 21| 22| 23| 24| 25| 26| 27| 28| 29| 30| 31|
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-|STOP|RUN|SINGLE STEP|SS DOWN|EXAMINE|EXAMINE NEXT|DEPOSIT|DEPOSIT NEXT|RESET|CLR|PROTECT|UNPROTECT|AUX UP|AUX DOWN|AUX1 UP|AUX1 DOWN|
+1.  **Clone the repository:**
+    ```bash
+    git clone [https://github.com/ITDiscovery/IMASI8080viaESP32.git](https://github.com/ITDiscovery/IMASI8080viaESP32.git)
+    cd IMASI8080viaESP32
+    ```
+2.  **Open the `.ino` file** in the Arduino IDE.
+3.  **Configure Board Settings:** Select the appropriate ESP32 board in the Arduino IDE's **Tools** menu.
+    > **⚠️ SD Card Note:** This project uses a custom pin mapping (Pins 10-13) for the SD Card SPI interface. If you are using the **Waveshare ESP32-S3-Zero** variant, you may need to modify the `pins_arduino.h` file.
+4.  **Configure Network:** Update the `ssid` and `password` variables in the `.ino` file with your preferred Wi-Fi network credentials (if using the WiFi feature).
+5.  **Compile and Upload:** Click the **Upload** button to compile the code and flash it to your ESP32.
 
+---
 
-H1 (LED) Connections:
+## 🏗️ Hardware Revisions
 
-| Pin | Name |  | Pin | Name |
-|-----|------|---|-----|------|
-|H1-1 |A15| |H1-2 | INTE |
-|H1-3 |A14| |H1-4 | PROT |
-|H1-5 |A13| |H1-6 | WAIT |
-|H1-7 |A12| |H1-8 | HLDA |
-|H1-9 |A11| |H1-10 | D7 |
-|H1-11 |A10| |H1-12 | D6 |
-|H1-13 |A9| |H1-14 | D5 |
-|H1-15 |A8| |H1-16 | D4 |
-|H1-17 |A7| |H1-18 | D3 |
-|H1-19 |A6| |H1-20 | D2 |
-|H1-21 |A5| |H1-22 | D1 |
-|H1-23 |A4| |H1-24 | D0 |
-|H1-25 |A3| |H1-26 | INT |
-|H1-27 |A2| |H1-28 | WO |
-|H1-29 |A1| |H1-30 | Stack |
-|H1-31 |A0| |H1-32 | HLTA |
-|H1-33 |User2| |H1-34 | OUT |
-|H1-35 |User1| |H1-36 | IN |
-|H1-37 |+5V| |H1-38 | INP |
-|H1-39 |Gnd| |H1-40 | MEMR |
+The project has undergone several hardware revisions:
 
-H2 (Switch) Connections:
+* **AVR Hardware (Dropped):** The initial design using an AVR was dropped due to speed issues caused by the need for external memory. Early concepts using the **AVR128DB28 Flash** were abandoned because newly posted specifications showed only a **1K write cycle endurance**. While using an external **23LC512 SRAM** was considered (and would have allowed for an **AVR64DB28**), this approach was too slow and required an additional 4 pins. The decision was made to switch to the ESP32 platform.
+* **RevA:** Boards would require too many modifications to function.
+* **RevB (Current Working Version):** This version requires a mod to go from Pin 1 of U2 to Pin 24 of H3, and an **ESP32 and a 5V-to-3.3V transceiver** must be bodged onto the board to function.
+* **RevC (Future Design):** This design will use the ESP32 natively and drop the external 23LC512 SRAM. This version has **not yet been produced or tested**.
 
-| Pin | Name |  | Pin | Name |
-|-----|------|---|-----|------|
-|H2-1 |A0|H2-2 |A1|
-|H2-3 |A2|H2-4 |A3|
-|H2-5 |A4|H2-6 |A5|
-|H2-7 |A6|H2-8 |A7|
-|H2-9 |A8|H3-10 |A9|
-|H2-11 |A10|H2-12 |A11|
-|H2-13 |A12|H2-14 |A13|
-|H2-15 |A14|H2-16 |A15|
-|H2-17 |Examine|H2-18 |Examine_Next|
-|H2-19 |Deposit|H2-20 |Deposit_Next|
-|H2-21 |Reset|H2-22 |Clr|
-|H2-23 |Run|H2-24 |Stop|
-|H2-25 |Single_Step|H2-26 |Single_Step_|
-|H2-27 |Protect|H2-28 |Unprotect|
-|H2-39 |Aux1 Up|H2-30 |Aux1 Down|
-|H2-31 |Aux2 Up|H2-32 |Aux2 Down|
-|H2-33 |+5V|H2-34 |Gnd|
-|H2-35 |+5V|H2-36 |Gnd|
-|H2-37 |+5V|H2-38 |Gnd|
-|H2-39 |+5V|H2-40 |Gnd|
+---
 
-The above Control switch order can be changed by editing the enum of Control declaration.
+## 🔌 Pin Definitions and Wiring
 
-Note: Implementing "new" hardware is via i8080_in and i8080_out which has a switch/case based on the port number.
-Currently Implemented:
+The following tables detail the pin connections for the ESP32 and the external 40-pin headers (H1 and H2).
 
-Port 0x00 in: Sends back 0x00
+### ESP32 Pin Mapping (To H1/H2 Headers)
 
-Port 0x01: term_in/term_out in main.c
+| Function | H1/H2 Pin | ESP32-S3-Zero Pin |
+| :--- | :--- | :--- |
+| **LED Data (SER)** | 36 | 1 (`LdataPin`) |
+| **LED Latch (RClk)** | 38 | 2 (`LlatchPin`) |
+| **LED Clock (SRCK)** | 40 | 3 (`LclockPin`) |
+| **SW Clock (CP)** | 37 | 5 (`SclockPin`) |
+| **SW Data (Q7)** | 35 | 4 (`SdataPin`) |
+| **SW Latch (PL!)** | 33 | 6 (`SlatchPin`) |
+| **Analog Out** | 29 | 7 (`AnalogOut`) |
+| **RX (Serial2 RX)** | 8 | 14 (`Serial2RX`) |
+| **TX (Serial2 TX)** | 10 | 15 (`Serial2TX`) |
+| **SD Card CS** | 24 | 10 (`SD_CS_PIN`) |
+| **SD Card MOSI** | 19 | 11 (`SD_MOSI_PIN`) |
+| **SD Card SClk** | 23 | 12 (`SD_CLK_PIN`) |
+| **SD Card MISO** | 21 | 13 (`SD_MISO_PIN`) |
+| **Built-In LED** | N/A | 21 |
 
-Port 0x06 and 0x07: Cassette Port (not implemented)
+> **Note:** As the only input line, **SWData** must be **level converted**. The low output levels (3.3V) of the remaining signals will be respected by the TTL inputs.
 
-Port 0x08,0x09,0x0A: Disk Controller
+### H1 (LED) Connections
 
-Port 0x10,0x11: 2SIO Port 1 (needs to go to sockets, not serial)
+| Pin | Signal | Pin | Signal |
+| :--- | :--- | :--- | :--- |
+| **H1-1** | A15 | **H1-2** | INTE |
+| **H1-3** | A14 | **H1-4** | PROT |
+| **H1-5** | A13 | **H1-6** | WAIT |
+| **H1-7** | A12 | **H1-8** | HLDA |
+| **H1-9** | A11 | **H1-10** | D7 |
+| **H1-11** | A10 | **H1-12** | D6 |
+| **H1-13** | A9 | **H1-14** | D5 |
+| **H1-15** | A8 | **H1-16** | D4 |
+| **H1-17** | A7 | **H1-18** | D3 |
+| **H1-19** | A6 | **H1-20** | D2 |
+| **H1-21** | A5 | **H1-22** | D1 |
+| **H1-23** | A4 | **H1-24** | D0 |
+| **H1-25** | A3 | **H1-26** | INT |
+| **H1-27** | A2 | **H1-28** | WO |
+| **H1-29** | A1 | **H1-30** | Stack |
+| **H1-31** | A0 | **H1-32** | HLTA |
+| **H1-33** | User2 | **H1-34** | OUT |
+| **H1-35** | User1 | **H1-36** | IN |
+| **H1-37** | +5V | **H1-38** | INP |
+| **H1-39** | Gnd | **H1-40** | MEMR |
 
-Update: Dumped the TM1638, as it had trouble dealing with more than a few switches on at the same time, especially with 7-Segments
-connected. 
+### H2 (Switch) Connections
 
-ESP32 to Blinkenlight:
-| Name | H2 Pin | ESP32-S3-Zero Pin |
-|-----|------|----- |
-| LEDData |36|1|
-| LEDLatch |38|2|
-| LEDClock |40|3|
-| SWClock |37|5|
-| SWData |35|4|
-| SWLatch|33|6|
-| SDA |3|8|
-| SCL |5|9|
-| Ain |31|17|
-| Aout|29|7|
-| MOSI |19|11|
-| MISO |21|13|
-| SClk |23|12|
-| CS |24|10|
-| RX |8|14|
-| TX |10|15|
-| Built In LED| |21|
+| Pin | Signal | Pin | Signal |
+| :--- | :--- | :--- | :--- |
+| **H2-1** | A0 | **H2-2** | A1 |
+| **...** | ... | **...** | ... |
+| **H2-15** | A14 | **H2-16** | A15 |
+| **H2-17** | Examine | **H2-18** | Examine\_Next |
+| **H2-19** | Deposit | **H2-20** | Deposit\_Next |
+| **H2-21** | Reset | **H2-22** | Clr |
+| **H2-23** | Run | **H2-24** | Stop |
+| **H2-25** | Single\_Step | **H2-26** | Single\_Step\_ |
+| **H2-27** | Protect | **H2-28** | Unprotect |
+| **H2-29** | Aux1 Up | **H2-30** | Aux1 Down |
+| **H2-31** | Aux2 Up | **H2-32** | Aux2 Down |
+| **H2-33** | +5V | **H2-34** | Gnd |
+| **...** | ... | **...** | ... |
+| **H2-39** | +5V | **H2-40** | Gnd |
 
-Note: As the only input line, SWData must be level converted. The low output levels (3.3V) of the remaining signals will "respected" by the TTL inputs.
-Note: Using 10-13 for the SPI will require a change to the pins_arduino.h for the Waveshare board, found at: /Users/...../Library/Arduino15/packages/esp32/hardware/esp32/3.0.7/variants/waveshare_esp32_s3_zero
+> **Note:** The control switch order can be changed by editing the `enum` of `Control` declaration in the source code.
 
+---
 
-http://retrocmp.com/projects/blinkenbone/172-blinkenbone-high-level-interface-api-to-panels
+## 💻 I/O Implementation
 
-Blinkinlights EXE:
-https://github.com/j-hoppe/BlinkenBone/releases
+The emulation implements "new" hardware through the `i8080_in` and `i8080_out` functions, which use a `switch/case` based on the port number.
 
-Altair via shift registers: 
-https://github.com/companje/Altair8800
+### Currently Implemented Ports
 
-AVR Install Notes:
-Needs SdFat library (current is 2.2)
+* **Port 0x00 (In):** Sends back `0x00`.
+* **Port 0x01 (In/Out):** Handles `term_in`/`term_out` for the primary terminal interface.
+* **Port 0x08, 0x09, 0x0A (I/O):** Disk Controller interface.
+* **Port 0x10, 0x11 (I/O):** 2SIO Port 1 (needs to be routed to sockets instead of serial).
+* **Port 0x06, 0x07 (I/O):** Cassette Port (Not implemented).
+* **Port 0xFF (Out):** Writes **4 bits** to control the `User4 - User1` LEDs.
 
-Rasperry Pi Note:
-Big problems with a C++ library for GPIO, due to trolls annoying the original author. Here's how to install wiringPi:
+---
 
-```
-git clone https://github.com/WiringPi/WiringPi.git
-cd WiringPi
-./build
-```
+## 🚦 Programming Bit Reference
+
+This defines the mapping of the 40 shift register bits to the 8080's address, data, and status signals.
+
+### LED Data (Shift Register Output)
+
+| Bit | Signal | Description |
+| :--- | :--- | :--- |
+| 0-7 | D0-D7 | **Data Bus** |
+| 8 | INT | Interupt request (Not implemented) |
+| 9 | WO | **Write to memory or output port.** |
+| 10 | STACK | Address bus holds stack pointer (Not implemented) |
+| 11 | HLTA | A **HALT** instruction has been acknowledged. |
+| 12 | OUT | **Out to port.** |
+| 13 | M1 | CPU is performing the 1st cycle of the instruction (Not implemented) |
+| 14 | INP | **In from port.** |
+| 15 | MEMR | **Memory bus is being used.** |
+| 16-31 | A0-A15 | **Address Bus** |
+| 32 | PROT | Memory is protected (Not implemented) |
+| 33 | INTE | An **interrupt has been generated.** |
+| 34 | WAIT | CPU is in a **WAIT** state (Not implemented) |
+| 35 | HLDA/RUN | A Hold has been acknowledged/Run Mode. |
+| 36-39 | User4-User1 | Send 4 bits OUT to Port 0xFF. |
+
+### Switch Data (Shift Register Input)
+
+| Bit | Signal |
+| :--- | :--- |
+| 0-15 | A0-A15 (Address Switches) |
+| 16 | STOP |
+| 17 | RUN |
+| 18 | SINGLE STEP |
+| 19 | SS DOWN |
+| 20 | EXAMINE |
+| 21 | EXAMINE NEXT |
+| 22 | DEPOSIT |
+| 23 | DEPOSIT NEXT |
+| 24 | RESET |
+| 25 | CLR |
+| 26 | PROTECT |
+| 27 | UNPROTECT |
+| 28 | AUX UP |
+| 29 | AUX DOWN |
+| 30 | AUX1 UP |
+| 31 | AUX1 DOWN |
+
+---
+
+## ⏭️ ToDo List (Current Priorities)
+
+This list focuses on tasks required to achieve a complete, functional IMSAI 8080 replica:
+
+1.  **Floppy Disk Write implementation.** (Current Major Focus)
+2.  The code needs **refactoring**, specifically in the **I/O handling routines.**
+3.  Look into adding support for the optional **8K BASIC interpreter.**
+4.  I can now add **WiFi via SSH** to this.
+5.  Needs lots of **speed ups** (I/O refactoring will help with this).
+6.  Review **pull request #45** (LED refresh issue).
+
+---
+
+## ✨ Future Features (Secondary Goals)
+
+These are secondary goals that can be addressed once the core IMSAI 8080 emulation is complete and stable:
+
+* Would be nice to have it connectable to a **Raspberry Pi**.
+* Make smaller **Blinkin Boards to extend:** Such as a 7-Segment to show address and data bus values.
+* Would be nice to allow it to emulate other blinkinlight platforms (e.g., PDP-8).
+
+---
+
+## 🔗 External Resources
+
+* **3D Printer Toggle Paddles, Switch and LED Mounts:**
+    * <https://www.thingiverse.com/thing:5627711>
+* **Blinkenbone High-Level Interface API to Panels:**
+    * <http://retrocmp.com/projects/blinkenbone/172-blinkenbone-high-level-interface-api-to-panels>
+* **Blinkenlights EXE (BlinkenBone):**
+    * <https://github.com/j-hoppe/BlinkenBone/releases>
+* **Altair via shift registers (Reference):**
+    * <https://github.com/companje/Altair8800>
+* **Raspberry Pi `wiringPi` Install Notes (for GPIO):**
+    * ```bash
+        git clone [https://github.com/WiringPi/WiringPi.git](https://github.com/WiringPi/WiringPi.git)
+        cd WiringPi
+        ./build
+        ```
