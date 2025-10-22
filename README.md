@@ -49,6 +49,23 @@ The project relies on these libraries, which must be installed via the Arduino L
 4.  **Configure Network:** Update the `ssid` and `password` variables in the `.ino` file with your preferred Wi-Fi network credentials (if using the WiFi feature).
 5.  **Compile and Upload:** Click the **Upload** button to compile the code and flash it to your ESP32.
 
+#### Build Configuration
+
+This project is built for the **Waveshare ESP32-S3-Zero** board using the following settings in the Arduino IDE. These are crucial for enabling the dual-core operation and PSRAM.
+
+* **Board:** `Waveshare ESP32-S3-Zero`
+* **CPU Frequency:** `240MHz`
+* **PSRAM:** `Enabled`
+* **Partition Scheme:** `Default 4MB with spiffs`
+* **Arduino Runs on:** `Core 1`
+* **Events run on:** `Core 1`
+* **Flash Mode:** `QIO/80MHz`
+* **USB CDC on Boot:** `Enabled`
+* **Core Debug Level:** `None`
+* **USB DFU on Boot:** `Disabled`
+* **USB Firmware MSC on Boot:** `Disable`
+* **Erase All Flash Before Sketch Upload:** `Disabled`
+
 ---
 
 ## 🏗️ Hardware Revisions
