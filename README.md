@@ -1,4 +1,4 @@
-# Altair8800viaAVR
+# IMASI8080onESP32
 I created a small board the also has a mini "mock up" of an Altair 8800 front panel via DIP switches and LED bar graphs.
 The board has two 40 pin connectors to wire up to external LEDs and switches.
 
