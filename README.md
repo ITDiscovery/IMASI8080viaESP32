@@ -57,9 +57,9 @@ The project has undergone several hardware revisions:
 
 * **AVR Hardware (Dropped):** The initial design using an AVR was dropped due to speed issues caused by the need for external memory. Early concepts using the **AVR128DB28 Flash** were abandoned because newly posted specifications showed only a **1K write cycle endurance**. While using an external **23LC512 SRAM** was considered (and would have allowed for an **AVR64DB28**), this approach was too slow and required an additional 4 pins. The decision was made to switch to the ESP32 platform.
 * **RevA:** Boards would require too many modifications to function.
-* **RevB (Current Working Version):** This version requires a mod to go from Pin 1 of U2 to Pin 24 of H3, and an **ESP32 and a 5V-to-3.3V transceiver** must be bodged onto the board to function.
-* **RevC (Future Design):** This design will use the ESP32 natively and drop the external 23LC512 SRAM. This version has **not yet been produced or tested**.
-
+* **RevB:** This version requires a mod to go from Pin 1 of U2 to Pin 24 of H3, and it used a smaller footprint AVR128DB28.
+* **RevC (Current Design):** Board has been heavily bodged to accomdate an ESP32 and a 5V-to-3.3V transceiver, but worked well during AVR development.
+* **RevD (Future Design):** Has the ESP32-S3-Zero and the transciever designed onto the board. The board has not been produced or tested.
 ---
 
 ## 🔌 Pin Definitions and Wiring
