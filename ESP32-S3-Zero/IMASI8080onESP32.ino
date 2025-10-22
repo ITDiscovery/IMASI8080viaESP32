@@ -13,8 +13,8 @@ extern "C" {
 #include "disk.h"
 
 // Replace with your network credentials
-const char* ssid = "XXXXXX";
-const char* password = "XXXXXXXXX";
+const char* ssid = "skylernet";
+const char* password = "tilt0waitsplunDger";
 
 //#define DEBUG
 //#define DEBUGIO
@@ -1031,8 +1031,8 @@ void loop() {
     if (onRelease(AUX2_UP)) {
         Serial.println("AUX2_UP: Loading Microsoft Basic");
         Serial.flush();
-        if (disk_open_files("/EXTBAS5.DSK", "/BDSC.DSK")) {
-        //if (disk_open_files("/MBASIC.DSK", "/BDSC.DSK")) { 
+        //if (disk_open_files("/EXTBAS5.DSK", "/BDSC.DSK")) {
+        if (disk_open_files("/MBASIC.DSK", "/BDSC.DSK")) { 
             examine(0xff00);
             bitClear(bus.state, WAIT);
         }
@@ -1040,7 +1040,8 @@ void loop() {
     if (onRelease(AUX2_DOWN)) {
         Serial.println("AUX2_DOWN: Loading CP/M + ZORK...");
         Serial.flush();
-        if (disk_open_files("/CPM63K.DSK", "/ZORK.DSK")) {
+        //if (disk_open_files("/CPM22B23-56K.DSK", "/WORDSTAR.DSK")) { 
+        if (disk_open_files("/CPM22B23-56K.DSK", "/ZORK.DSK")) { 
             examine(0xff00);
             bitClear(bus.state, WAIT);
         }
