@@ -1,3 +1,4 @@
+#include "config.h"
 #include "serial.h"
 #include <Arduino.h>
 

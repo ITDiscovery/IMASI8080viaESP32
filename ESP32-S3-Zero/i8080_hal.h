@@ -34,6 +34,9 @@
 #ifndef I8080_HAL_H
 #define I8080_HAL_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 //extern int i8080_hal_memory_read_byte(int addr);
 extern unsigned char i8080_hal_memory_read_byte(short unsigned int addr);  
@@ -57,5 +60,9 @@ void i8080_hal_io_output(unsigned char port, unsigned char vale);
 void i8080_hal_iff(unsigned char on);
 
 extern unsigned char* i8080_hal_memory(void);
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #endif

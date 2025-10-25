@@ -30,6 +30,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+#ifndef I8080_H
+#define I8080_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 extern void i8080_init(void);
 extern int i8080_instruction(void);
@@ -55,3 +61,9 @@ extern int i8080_regs_h(void);
 extern int i8080_regs_l(void);
 
 extern int i8080_interrupt(int vector);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif // I8080_H

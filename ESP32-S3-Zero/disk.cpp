@@ -1,8 +1,7 @@
+#include "config.h"
 #include "disk.h"
 #include "i8080.h"
 #include <esp_psram.h> // Include PSRAM functions
-
-//#define DISK_TRACE // Enables high-level I/O tracing
 
 // --- Private Module Variables ---
 static disks_t disk_drive;
@@ -13,57 +12,6 @@ static uint8_t* psram_disk2 = nullptr; // Pointer for Disk 2 PSRAM buffer
 static void disk_flush(disk_t *d);
 
 // --- Private Helper Functions ---
-
-// restore_disk_image prepares the file on SD card (No longer used directly for loading)
-static bool restore_disk_image(const char* dsk_filename) {
-    const char* dot = strrchr(dsk_filename, '.');
-    if (!dot) {
-        Serial.printf("ERR: No extension on filename %s\r\n", dsk_filename);
-        return false;
-    }
-    int base_len = dot - dsk_filename;
-    char bak_filename[base_len + 5];
-    strncpy(bak_filename, dsk_filename, base_len);
-    bak_filename[base_len] = '\0';
-    strcat(bak_filename, ".BAK");
-
-    Serial.printf("Restoring %s from master %s...\r\n", dsk_filename, bak_filename);
-
-    if (!SD.exists(bak_filename)) {
-        Serial.printf("ERR: Master image %s not found!\r\n", bak_filename);
-        return false;
-    }
-    if (SD.exists(dsk_filename)) {
-        SD.remove(dsk_filename);
-    }
-
-    File bak_file = SD.open(bak_filename, FILE_READ);
-    if (!bak_file) {
-        Serial.printf("ERR: Could not open master file %s\r\n", bak_filename);
-        return false;
-    }
-    File dsk_file = SD.open(dsk_filename, FILE_WRITE);
-    if (!dsk_file) {
-        Serial.printf("ERR: Could not create new disk file %s\r\n", dsk_filename);
-        bak_file.close();
-        return false;
-    }
-
-    const size_t buffer_size = 512;
-    uint8_t buffer[buffer_size];
-    size_t bytes_read;
-    while ((bytes_read = bak_file.read(buffer, buffer_size)) > 0) {
-        dsk_file.write(buffer, bytes_read);
-    }
-
-    dsk_file.flush();
-    dsk_file.close();
-    bak_file.close();
-    Serial.print("Restore complete.\r\n");
-    return true;
-}
-
-
 /**
  * @brief (PSRAM Version) Clears the internal write_active flag.
  */
@@ -277,7 +225,9 @@ bool disk_open_files(const char* file1, const char* file2) {
             return false;
         }
 
+        #ifdef DISK_TRACE
         Serial.printf("Attempting to load %s directly into PSRAM...\r\n", filename);
+        #endif
         File dsk_file = SD.open(filename, FILE_READ);
         if (!dsk_file) {
             Serial.printf("ERR: Failed to open %s for reading.\r\n", filename);
@@ -302,7 +252,9 @@ bool disk_open_files(const char* file1, const char* file2) {
                            filename, file_size, DISK_IMAGE_SIZE);
         }
 
+        #ifdef DISK_TRACE
         Serial.printf("Loading %s (%d bytes) into PSRAM...\r\n", filename, bytes_to_read);
+        #endif
         size_t bytes_read = dsk_file.read(target_buffer, bytes_to_read);
         dsk_file.close();
 
@@ -320,8 +272,11 @@ bool disk_open_files(const char* file1, const char* file2) {
             memset(target_buffer + bytes_read, 0xE5, DISK_IMAGE_SIZE - bytes_read);
         }
 
+        #ifdef DISK_TRACE
         Serial.printf("Load successful for %s.\r\n", filename);
+        #endif
 
+        #ifdef DISK_TRACE
         // --- PSRAM VERIFICATION ---
         Serial.print("[VERIFY] First 16 bytes read back from PSRAM: ");
         for(int i=0; i<16; i++) {
@@ -331,6 +286,7 @@ bool disk_open_files(const char* file1, const char* file2) {
         }
         Serial.print("\r\n");
         // --- END VERIFICATION ---
+        #endif
 
         return true;
     };
