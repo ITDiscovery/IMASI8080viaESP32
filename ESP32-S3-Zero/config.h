@@ -44,8 +44,8 @@
 // =======================================================
 // === WiFi / Network Credentials ===
 // =======================================================
-#define WIFI_SSID "skylernet"
-#define WIFI_PASSWORD "tilt0waitsplunDger"
+#define WIFI_SSID "XXXXXX"
+#define WIFI_PASSWORD "XXXXXXXXX"
 
 // =======================================================
 // === NTP & Time Zone Configuration ===
