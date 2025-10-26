@@ -1,0 +1,294 @@
+Code for later to on the fly patch CPM to allow reading and writing of Z80Packs loaded using hdsk_psram. 
+
+
+```
+; ------------------------------------------------------------------
+; HDINIT.ASM
+;
+; CP/M 2.2 BIOS Patcher for Read-Only Hard Drive
+; Assembles with ASM.COM, loads with LOAD.COM
+; ------------------------------------------------------------------
+
+; --- CP/M Equates ---
+BDOS		EQU	0x0005		; BDOS entry point
+BIOS		EQU	0xDA00		; BIOS start for a 56K CP/M system
+TPA_START	EQU	0x0006		; Pointer to top of user program
+
+; --- BIOS Jump Table Offsets ---
+SELDSK_VEC	EQU	BIOS+03H	; JMP SELDSK
+SETTRK_VEC	EQU	BIOS+06H	; JMP SETTRK
+SETSEC_VEC	EQU	BIOS+09H	; JMP SETSEC
+SETDMA_VEC	EQU	BIOS+0CH	; JMP SETDMA
+READ_VEC	EQU	BIOS+0FH	; JMP READ
+WRITE_VEC	EQU	BIOS+12H	; JMP WRITE
+
+; --- Our Hardware Port Equates ---
+HD_PORT_STATUS	EQU	0A0H		; Hard drive status port
+HD_PORT_DATA	EQU	0A1H		; Hard drive data port
+HD_PORT_TRACK_L	EQU	0A2H		; Track Low port
+HD_PORT_TRACK_H	EQU	0A3H		; Track High / Sector port
+
+; --- Our Drive Number ---
+HD_DRIVE_NUM	EQU	4		; Drive E:
+
+; ------------------------------------------------------------------
+; Program Start
+; ------------------------------------------------------------------
+		ORG	0100H		; All .COM files start here
+
+START:
+		LXI	SP, 0100H	; Set stack pointer out of the way
+		CALL	PATCH_BIOS	; Go install our patches
+		CALL	INSTALL_TSR	; Go protect our code in memory
+		RET			; Return to CP/M (our code is now resident)
+
+; ------------------------------------------------------------------
+; PATCH_BIOS: Reads the original BIOS jump addresses and
+; inserts jumps to our new hook routines.
+; ------------------------------------------------------------------
+PATCH_BIOS:
+		; --- Patch SELDSK ---
+		LHLD	SELDSK_VEC+1	; Get old JMP address
+		SHLD	OLD_SELDSK	; Save it
+		LXI	H, HOOK_SELDSK	; Get our new routine address
+		SHLD	SELDSK_VEC+1	; Write it to the BIOS JMP table
+
+		; --- Patch SETTRK ---
+		LHLD	SETTRK_VEC+1
+		SHLD	OLD_SETTRK
+		LXI	H, HOOK_SETTRK
+		SHLD	SETTRK_VEC+1
+
+		; --- Patch SETSEC ---
+		LHLD	SETSEC_VEC+1
+		SHLD	OLD_SETSEC
+		LXI	H, HOOK_SETSEC
+		SHLD	SETSEC_VEC+1
+
+		; --- Patch SETDMA ---
+		LHLD	SETDMA_VEC+1
+		SHLD	OLD_SETDMA
+		LXI	H, HOOK_SETDMA
+		SHLD	SETDMA_VEC+1
+
+		; --- Patch READ ---
+		LHLD	READ_VEC+1
+		SHLD	OLD_READ
+		LXI	H, HOOK_READ
+		SHLD	READ_VEC+1
+
+		; --- Patch WRITE ---
+		LHLD	WRITE_VEC+1
+		SHLD	OLD_WRITE
+		LXI	H, HOOK_WRITE
+		SHLD	WRITE_VEC+1
+
+		RET
+
+; ------------------------------------------------------------------
+; INSTALL_TSR: Tell CP/M to protect our code by moving the
+; "Top of Program Area" pointer to just above our code.
+; ------------------------------------------------------------------
+INSTALL_TSR:
+		LXI	H, 0		; Dummy operand
+		PUSH	H		; Save space on stack
+		LXI	H, HOOK_END	; Get address of the end of our driver
+		DAD	SP		; Add to stack pointer
+		SHLD	TPA_START	; Set new "top of program" address
+		POP	H		; Clean up stack
+		RET
+
+; ------------------------------------------------------------------
+; Data Storage Area
+; This section holds our driver's variables and saved JMP addresses.
+; ------------------------------------------------------------------
+OLD_SELDSK:	DS	2
+OLD_SETTRK:	DS	2
+OLD_SETSEC:	DS	2
+OLD_SETDMA:	DS	2
+OLD_READ:	DS	2
+OLD_WRITE:	DS	2
+
+; --- Our internal variables ---
+HD_ACTIVE:	DB	0		; 0=Floppy, 1=Hard Drive
+HD_TRACK:	DW	0		; Current selected track
+HD_SECTOR:	DB	0		; Current selected sector
+HD_DMA:		DW	0		; Current DMA address
+
+; ------------------------------------------------------------------
+; NEW BIOS HOOK ROUTINES
+; These intercept the BIOS calls.
+; ------------------------------------------------------------------
+
+; --- HOOK SELDSK (Select Disk) ---
+; Input: C = drive number (0=A, 1=B...)
+HOOK_SELDSK:
+		MOV	A, C
+		CPI	HD_DRIVE_NUM	; Is it our drive?
+		JNZ	GO_OLD_SELDSK	; No, jump to old routine
+		
+		; It's our drive
+		MVI	A, 1
+		STA	HD_ACTIVE	; Set our flag
+		XRA	A		; Return 0 (OK)
+		RET
+GO_OLD_SELDSK:
+		XRA	A		; It's a floppy drive
+		STA	HD_ACTIVE	; Clear our flag
+		LHLD	OLD_SELDSK	; Get old JMP address
+		PCHL			; Jump to it
+
+; --- HOOK SETTRK (Set Track) ---
+; Input: C = track number
+HOOK_SETTRK:
+		LDA	HD_ACTIVE
+		ORA	A		; Is our drive active?
+		JZ	GO_OLD_SETTRK	; No, jump to old routine
+
+		; It's our drive
+		MOV	A, C
+		STA	HD_TRACK	; Save track low byte
+		MVI	A, 0
+		STA	HD_TRACK+1	; Save track high byte (0)
+		; Note: This assumes tracks 0-255
+		RET
+GO_OLD_SETTRK:
+		LHLD	OLD_SETTRK
+		PCHL
+
+; --- HOOK SETSEC (Set Sector) ---
+; Input: C = sector number
+HOOK_SETSEC:
+		LDA	HD_ACTIVE
+		ORA	A
+		JZ	GO_OLD_SETSEC
+
+		; It's our drive
+		MOV	A, C
+		STA	HD_SECTOR
+		RET
+GO_OLD_SETSEC:
+		LHLD	OLD_SETSEC
+		PCHL
+
+; --- HOOK SETDMA (Set DMA Address) ---
+; Input: BC = DMA address
+HOOK_SETDMA:
+		LDA	HD_ACTIVE
+		ORA	A
+		JZ	GO_OLD_SETDMA
+
+		; It's our drive
+		MOV	A, C
+		STA	HD_DMA		; Save DMA low
+		MOV	A, B
+		STA	HD_DMA+1	; Save DMA high
+		RET
+GO_OLD_SETDMA:
+		LHLD	OLD_SETDMA
+		PCHL
+
+; --- HOOK WRITE (Write Sector) ---
+; Returns: A = 0 (OK) or 1 (Error)
+HOOK_WRITE:
+		LDA	HD_ACTIVE
+		ORA	A
+		JZ	GO_OLD_WRITE
+
+		; It's our drive, return Write Protect error
+		MVI	A, 1		; 1 = Error
+		RET
+GO_OLD_WRITE:
+		LHLD	OLD_WRITE
+		PCHL
+
+; --- HOOK READ (Read Sector) ---
+; Returns: A = 0 (OK) or 1 (Error)
+HOOK_READ:
+		LDA	HD_ACTIVE
+		ORA	A
+		JZ	GO_OLD_READ
+
+		; It's our drive, do the read
+		CALL	DO_HD_READ
+		XRA	A		; Return 0 (OK)
+		RET
+GO_OLD_READ:
+		LHLD	OLD_READ
+		PCHL
+
+; ------------------------------------------------------------------
+; DO_HD_READ: Our actual hardware read routine.
+; This talks to the ports based on hdsk_psram.cpp
+; ------------------------------------------------------------------
+DO_HD_READ:
+		; 1. Set Track
+		LDA	HD_TRACK
+		OUT	HD_PORT_TRACK_L	; Send Track Low
+
+		; 2. Set Sector (and Track High, which is 0)
+		LDA	HD_SECTOR
+		ANI	1FH		; Mask to 5 bits (0-31)
+		; We assume Track High is 0, so ORA H is not needed
+		OUT	HD_PORT_TRACK_H	; Sets Track High=0 and Sector
+		
+		; 3. Read 128 bytes
+		LHLD	HD_DMA		; Get DMA destination address
+		MVI	B, 128		; Loop 128 times
+
+READ_LOOP:
+		; Wait for Data Ready bit (Bit 7)
+		IN	HD_PORT_STATUS
+		ANI	80H
+		JZ	READ_LOOP	; Loop if not ready
+		
+		; Read the byte
+		IN	HD_PORT_DATA	; Get data byte
+		MOV	M, A		; Store at DMA address (HL)
+		INX	H		; Next DMA address
+		DCR	B		; Decrement counter
+		JNZ	READ_LOOP	; Loop if not done
+
+		RET			; Finished sector read
+
+; ------------------------------------------------------------------
+HOOK_END:	NOP			; Marker for the end of our resident code
+		END
+```
+Your Next Steps
+
+Enter the Code:
+
+A>ED HDINIT.ASM
+
+Use I (Insert) to type in the code.
+
+When done, hit Ctrl-Z to exit Insert mode.
+
+Use E (End) to save and exit ED.
+
+Assemble the Code:
+
+A>ASM HDINIT.ASM
+
+This will create HDINIT.HEX and HDINIT.PRN.
+
+Create the Executable:
+
+A>LOAD HDINIT
+
+This will create HDINIT.COM.
+
+Run the Patcher:
+
+A>HDINIT
+
+If all goes well, it will run and immediately return you to the A> prompt. The patch is now active.
+
+Test It!
+
+A>STAT E:
+
+A>DIR E:
+
+If this works, you've successfully patched CP/M in memory and can now use PIP to copy files from your read-only archive drive.
