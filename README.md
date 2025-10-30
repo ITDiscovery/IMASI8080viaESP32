@@ -11,6 +11,37 @@ This project creates an emulator of an **IMSAI 8080** front panel experience usi
 3.  Create smaller "Blinkin Boards" to extend the display, such as a 7-Segment module to show address and data bus values.
 4.  Allow for emulation of other classic machines, such as a **PDP-8**.
 
+## I. Core Emulation Features
+
+The project delivers a stable, high-performance emulation of the Intel 8080 CPU and key S-100 bus components, primarily running **CP/M 2.2**.
+
+### 🌟 System Stability and Performance
+
+* **CPU Core:** The **8080 CPU** core is stable, running at an emulated speed of approximately **~2 MHz**.
+* **Operating Systems:** Successfully boots and runs **CP/M 2.2 B23** and disk-based **Microsoft BASIC**.
+* **Application Success:** The system is capable of running complex, disk-intensive software like **ZORK I** and utilities such as **PIP.COM**.
+
+### 🌐 Networking and I/O
+
+* **Telnet Integration:** Telnet communication is correctly mapped to the standard **88-2SIO Port B** for network I/O.
+* **Inter-Core Communication:** Uses FreeRTOS queues for stable data exchange between the ESP32's Core 0 (Emulation) and Core 1 (Networking).
+
+### ⏱️ MITS 88-VI Real-Time Clock (RTC) Emulation
+
+The system accurately emulates the MITS 88-VI RTC card, providing real-world time to CP/M applications.
+
+* **Time Source:** Leverages the ESP32's system clock, synchronized via an **NTP server**.
+* **Functionality:** Supports both reading the current time and writing a new time back to update the ESP32's system clock.
+* **Interrupts:** Emulates the advanced **periodic vectored interrupt controller** (Port `0xFE`), a critical feature for enabling time-slicing in multi-user operating systems.
+
+### 💾 Storage Persistence
+
+* **Disk Write Mechanism:** Implemented with a **Write Back Mechanism** that saves changes from the PSRAM buffer back to the SD card, allowing for persistent modifications to disk images.
+* **Hard Disk Wedge:** A special wedge is in place to allow the read of a **Z80Pack 1.1Mb file** to patch CP/M and mount the file system as Read-Only.
+
+Essentially, this system has the CPU board, an 88-SIO (FTDI port), an 88-2SIO (to USB Serial and Telnet), an 88-DCDD Floppy Controller with 2 360K Drives,
+and an 88-VI/RTC. A 88-4PIO Hard Drive is also emulated, but still buggy.
+
 ---
 
 ## 🛠️ Build and Setup Instructions
@@ -65,6 +96,59 @@ This project is built for the **Waveshare ESP32-S3-Zero** board using the follow
 * **USB DFU on Boot:** `Disabled`
 * **USB Firmware MSC on Boot:** `Disable`
 * **Erase All Flash Before Sketch Upload:** `Disabled`
+
+### ⚙️ Project Configuration Menus
+
+The emulator includes three configuration menus, accessible via the front panel, for managing system settings, disks, and diagnostics.
+
+---
+
+#### 1. Main Configuration Menu
+
+This menu manages persistent system settings like network access and boot behavior.
+
+| Command | Action | Persistence |
+| :--- | :--- | :--- |
+| **[W] Set Wi-Fi Credentials** | Set Network | Prompts for SSID and Password and immediately writes them to **NVS (EEPROM)**. |
+| **[K] Set AUX Key Mappings** | Customize Controls | Maps the physical panel switches (AUX1, AUX2) to specific functions (e.g., "Enter Menu," "Trigger Disk Save"). |
+| **[A] Set Auto-Boot Options** | Define Boot Sequence | Sets a flag to **"Auto-boot into CP/M"** on power-up and specifies the default disk images to load. |
+| **[S] Save All Settings** | Master Save | Commits all changes from [P], [K], and [A] to persistent storage. |
+
+---
+
+#### 2. Disk Management Menu
+
+This menu is for managing the virtual disk images loaded into the emulated system (Drive 0/A: and Drive 1/B:).
+
+| Command | Action | Description |
+| :--- | :--- | :--- |
+| **[L] Load Disk** | Load Image | Prompts for a drive (**0 or 1**) and a full path (e.g., `/CPM.DSK`) to load an image from the SD card. |
+| **[M] Mount Blank** | Create Blank | Creates a new, blank disk image (all `0xE5`) in the selected drive's PSRAM buffer. |
+| **[S] Save Virtual** | Save Selected Disk | Saves the current content of the selected drive's buffer back to its original file on the SD card. |
+| **[A] Save All** | Shortcut | Automatically saves **both** Drive 0 and Drive 1 back to their respective files if they have been modified. |
+| **[U] Unmount** | Eject Disk | Clears the selected drive's buffer, virtually ejecting the disk. |
+| **[D] List Disks** | Browse SDCard | Lists the files and directories on the root (`/`) of the SD card. |
+| **[P] Set Paths** | Define Defaults | Defines default disk image paths (saved to NVS) for Auto-Boot and AUX key actions. |
+| **[B] Back** | Exit | Returns to the main configuration menu. |
+
+---
+
+#### 3. Diagnostics & Utilities Menu
+
+This menu provides low-level tools for testing hardware functionality, network connectivity, and loading diagnostic ROMs.
+
+| Command | Category | Action |
+| :--- | :--- | :--- |
+| **[T] Run Telnet Echo Test** | Diagnostics | Runs an echo test on the emulated Telnet port (Port `0x12`). |
+| **[D] Dump Memory at Address**| Utilities | Performs a memory dump starting at the address set by the physical front panel switches. |
+| **[1] Load SIO Polling Echo** | CPU/Memory Tests | Loads the SIO Polling Echo program for Port `0x00`. |
+| **[2] Load SIO Interrupt Echo** | CPU/Memory Tests | Loads the SIO Interrupt Echo program for Port `0x00`. |
+| **[3] Load CPU Benchmark** | CPU/Memory Tests | Loads a program to benchmark the emulated 8080 CPU. |
+| **[4] Load Altair Memory Test** | CPU/Memory Tests | Loads the classic Altair memory testing program. |
+| **[M] Load UBMON** | Monitor/Boot ROMs | Loads the UBMON monitor ROM at address `0xFD00`. |
+| **[K] Load TURNMON** | Monitor/Boot ROMs | Loads the TURNMON monitor ROM at address `0xFD00`. |
+| **[H] Load HDBLROM** | Monitor/Boot ROMs | Loads the HDBLROM monitor ROM at address `0xFC00`. |
+| **[B] Back to Main Menu** | Exit | Returns to the main configuration menu. |
 
 ---
 
