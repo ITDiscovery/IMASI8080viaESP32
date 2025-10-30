@@ -10,6 +10,10 @@
 #include "network_task.h"  // Includes WiFiServer, WiFiClient, extern queue handles
 #include "config.h"        // Includes project settings like NETWORK_TRACE
 
+// --- Extern variables defined in the main .ino file ---
+extern String global_ssid;
+extern String global_pass;
+
 // --- NTP Configuration ---
 const char* ntpServer = "pool.ntp.org";
 const long gmtOffset_sec = NTP_GMT_OFFSET_SEC;
@@ -126,7 +130,7 @@ void wifiTask(void *pvParameters) {
 
   // 1. Connect to WiFi
   Serial.print("Connecting to WiFi...");
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  WiFi.begin(global_ssid.c_str(), global_pass.c_str());
   int connect_tries = 0;
   while (WiFi.status() != WL_CONNECTED) {
     vTaskDelay(500 / portTICK_PERIOD_MS); // Use FreeRTOS delay
@@ -268,7 +272,7 @@ void wifiTask(void *pvParameters) {
          Serial.println("!!! wifiTask: WiFi connection LOST! Attempting reconnect...");
          WiFi.disconnect(); // Try full disconnect/reconnect
          vTaskDelay(100 / portTICK_PERIOD_MS);
-         WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+         WiFi.begin(global_ssid.c_str(), global_pass.c_str());
       } else {
          // Optional status print
          #ifdef NETWORK_TRACE

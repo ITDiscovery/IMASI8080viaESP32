@@ -21,6 +21,23 @@ struct Bus {
 extern Bus bus; // Declare that 'bus' exists elsewhere (in the .ino file)
 extern void CPUStatus(); // Declare CPUStatus so other modules can call it
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+void disk_init(void);
+bool disk_open_files(const char* file1, const char* file2);
+uint8_t disk_in(uint8_t port);
+void disk_out(uint8_t port, uint8_t vale);
+
+void disk_write_back(int drive);
+const char* disk_get_filename(int drive);
+void disk_mount_blank(int drive);
+
+#ifdef __cplusplus
+}
+#endif
+
 // --- Disk Module Specifics ---
 /* read drive status
 +---+---+---+---+---+---+---+---+

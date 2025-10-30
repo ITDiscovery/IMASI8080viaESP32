@@ -7,6 +7,9 @@
 static disks_t disk_drive;
 static uint8_t* psram_disk1 = nullptr; // Pointer for Disk 1 PSRAM buffer
 static uint8_t* psram_disk2 = nullptr; // Pointer for Disk 2 PSRAM buffer
+static const char* disk1_filename = nullptr;
+static const char* disk2_filename = nullptr;
+static bool drive_sector_true = false;
 
 // --- Forward Declarations ---
 static void disk_flush(disk_t *d);
@@ -22,6 +25,7 @@ static void disk_flush(disk_t *d) {
     }
 #endif
     d->write_active = false; // Clear the internal flag
+    d->buffer_pos = 0;
     // buffer_dirty remains true if set by disk_write - needed for future save-to-SD
 }
 
@@ -54,6 +58,7 @@ static void disk_function(uint8_t vale) {
           // If a write was active but maybe not finished, force flush status update
           disk_flush(disk_drive.current); // This will clear write_active
         }
+        disk_drive.current->buffer_pos = 0; // Resets for read
     }
 
 #ifdef DISK_TRACE
@@ -109,34 +114,66 @@ static void disk_function(uint8_t vale) {
 }
 
 static uint8_t disk_sector() {
-    // Flush ensures previous write status is cleared before starting new sector operation
-    disk_flush(disk_drive.current);
+    // This function now emulates the polling-based "disk spin" 
+    // (case 0011) for non-interrupt mode.
 
-    if (disk_drive.current->sector >= NUM_SECTORS) {
-        disk_drive.current->sector = 0;
+    uint8_t data = 0;
+    
+    // We simulate the disk spinning by flipping the "sector_true"
+    // bit every time this port is polled.
+    
+    if (drive_sector_true) {
+        // State 1: Was true, now flip to false.
+        drive_sector_true = false;
+        // When sector_true is false, the "T" bit (Bit 0) is 1 (Ready).
+        data |= 0x01; 
+    } else {
+        // State 2: Was false, now flip to true.
+        drive_sector_true = true;
+        // When sector_true is true, the "T" bit (Bit 0) is 0 (Not Ready).
+        
+        // We also advance the sector *in this state*, simulating
+        // the head moving to the next sector.
+        disk_drive.current->sector++;
+        if (disk_drive.current->sector >= NUM_SECTORS) {
+            disk_drive.current->sector = 0;
+        }
+
+        // When we advance to a new sector, any pending read/write burst is over.
+        // This resets buffer_pos for the *next* disk_read/disk_write.
+        disk_drive.current->buffer_pos = 0;
+        
+        // If a write was active, it's now "done" (or timed out)
+        if (disk_drive.current->write_active) {
+            disk_flush(disk_drive.current); // Clears write_active and buffer_pos
+        }
     }
 
-    // Set the target track/sector for subsequent read/write operations
-    disk_drive.current->write_track = disk_drive.current->track;
-    disk_drive.current->write_sector = disk_drive.current->sector;
+    // Now, build the final return value
+    // data variable already contains the "T" bit (0 or 1)
+    
+    // Add the current sector number (shifted left by 1)
+    data |= (disk_drive.current->sector << 1);
 
-    // Reset the byte position within the sector for reads/writes
-    disk_drive.current->buffer_pos = 0;
+    // Add unused/reserved bits (matching drive.cpp)
+    data |= 0xC0;
 
-    uint8_t ret_val = disk_drive.current->sector << 1; // Return sector number (shifted)
+    #ifdef DISK_TRACE
+    Serial.printf("[TRACE] Disk In: Port 0x09. T%d:S%d. sector_true=%d (T-Bit=%d). Returning: 0x%02X\r\n", 
+                  disk_drive.current->track, disk_drive.current->sector, !drive_sector_true, (data & 0x01), data);
+    #endif
 
-#ifdef DISK_TRACE
-    Serial.printf("[TRACE] Set Sector T%d:S%d. Returning: 0x%02X\r\n", disk_drive.current->track, disk_drive.current->sector, ret_val);
-#endif
-
-    disk_drive.current->sector++; // Increment for the next operation
-    return ret_val;
+    return data;
 }
-
 
 static uint8_t disk_read() {
     if (disk_drive.current == &disk_drive.nodisk || disk_drive.current->image_data == nullptr) {
         return 0xFF; // No disk or RAM allocated
+    }
+    // Set target sector on first read byte
+    if (disk_drive.current->buffer_pos == 0) {
+        disk_drive.current->write_track = disk_drive.current->track;
+        disk_drive.current->write_sector = disk_drive.current->sector;
     }
 
     if (disk_drive.current->buffer_pos < SECTOR) {
@@ -162,6 +199,12 @@ static void disk_write(uint8_t vale) {
 
     // Only write if the internal write sequence flag is active
     if (disk_drive.current->write_active) {
+        // Set target sector on first write byte
+        if (disk_drive.current->buffer_pos == 0) {
+            disk_drive.current->write_track = disk_drive.current->track;
+            disk_drive.current->write_sector = disk_drive.current->sector;
+            disk_drive.current->buffer_dirty = true; // Mark RAM changed
+        }
         if (disk_drive.current->buffer_pos < SECTOR) {
             uint32_t offset = disk_drive.current->write_track * TRACK + disk_drive.current->write_sector * SECTOR + disk_drive.current->buffer_pos;
             if (offset >= DISK_IMAGE_SIZE) return; // Bounds check
@@ -214,6 +257,8 @@ void disk_init(void) {
  */
 bool disk_open_files(const char* file1, const char* file2) {
     // Reset state before loading new images
+    disk1_filename = file1;
+    disk2_filename = file2;
     disk_drive.current = &disk_drive.nodisk;
     disk_drive.disk1.write_active = false; // Ensure flags are reset
     disk_drive.disk2.write_active = false;
@@ -333,19 +378,15 @@ bool disk_open_files(const char* file1, const char* file2) {
 uint8_t disk_in(uint8_t port) {
     if (disk_drive.current == &disk_drive.nodisk) return 0xFF;
 
-    // NOTE: The "Strict Flush Timing" block that was here has been removed,
-    // as it prematurely cleared the write_active flag during status polling.
-
     switch (port) {
         case 0x08: {
             // Build the byte representing bits that should be OFF in the final output
             uint8_t temp_bits_to_clear = 0;
 
             // Bit 0: Write Ready Status (0=Ready)
-            // This is the bit CP/M is polling for at F84F (ANA D).
-            if (disk_drive.current->write_active) {
-                 temp_bits_to_clear |= STATUS_ENWD; // Mark bit 0 (1) to be cleared
-             }
+            // AFORMAT and PIP both expect this to be 0 (Ready)
+            // to proceed. We'll set it as always ready.
+            temp_bits_to_clear |= STATUS_ENWD;
 
             // Bit 1: Move Head Allowed Status (0=Allowed)
             // This is required to pass the 'ANI 02' loop at F92F.
@@ -402,4 +443,115 @@ void disk_out(uint8_t port, uint8_t vale) {
         case 0x09: disk_function(vale); break;
         case 0x0A: disk_write(vale); break;
     }
+}
+/**
+ * @brief (PSRAM Version) Writes the entire PSRAM buffer for a drive back to its file on the SD card.
+ * This is the "Save Disk" function called from the menu.
+ * @param drive The drive number (0 or 1) to save.
+ */
+void disk_write_back(int drive) {
+    disk_t* d = nullptr;
+    const char* filename = nullptr;
+
+    if (drive == 0) {
+        d = &disk_drive.disk1;
+        filename = disk1_filename;
+    } else if (drive == 1) {
+        d = &disk_drive.disk2;
+        filename = disk2_filename;
+    }
+
+    if (d == nullptr || d->image_data == nullptr || filename == nullptr) {
+        Serial.printf("ERR: Save D%d - No disk or filename loaded.\r\n", drive);
+        return;
+    }
+
+    // Only save if the disk is "dirty" (has been written to)
+    if (!d->buffer_dirty) {
+        Serial.printf("Save D%d: Buffer not modified, skipping.\r\n", drive);
+        return;
+    }
+
+    Serial.printf("Saving D%d (%s) to SDCard...", drive, filename);
+    
+    // Open the file for writing. This will create it or overwrite it.
+    File dsk_file = SD.open(filename, FILE_WRITE);
+    if (!dsk_file) {
+        Serial.printf("\r\n!!! FAILED to open %s for writing !!!\r\n", filename);
+        return;
+    }
+
+    // Write the entire PSRAM buffer to the file
+    size_t bytes_written = dsk_file.write(d->image_data, DISK_IMAGE_SIZE);
+    dsk_file.close();
+
+    if (bytes_written == DISK_IMAGE_SIZE) {
+        Serial.println(" OK.");
+        d->buffer_dirty = false; // Clear the dirty flag now that it's saved
+    } else {
+        Serial.printf("\r\n!!! FAILED to write %d bytes to %s (wrote %d) !!!\r\n", DISK_IMAGE_SIZE, filename, bytes_written);
+    }
+}
+
+/**
+ * @brief Gets the filename for the specified drive.
+ * @param drive The drive number (0 or 1).
+ * @return A const char pointer to the filename, or "N/A".
+ */
+const char* disk_get_filename(int drive) {
+    if (drive == 0) {
+        return (disk1_filename != nullptr) ? disk1_filename : "N/A";
+    } else if (drive == 1) {
+        return (disk2_filename != nullptr) ? disk2_filename : "N/A";
+    }
+    return "N/A";
+}
+/**
+ * @brief (Hardcoded) Mounts a "blank" disk (all 0xE5) into the specified drive's PSRAM buffer.
+ * Sets the filename to /BLANK_A.DSK or /BLANK_B.DSK to allow saving.
+ * @param drive The drive number (0 or 1) to blank.
+ */
+void disk_mount_blank(int drive) {
+    disk_t* d = nullptr;
+    uint8_t* target_buffer = nullptr;
+    const char* new_filename = nullptr;
+
+    if (drive == 0) {
+        d = &disk_drive.disk1;
+        target_buffer = psram_disk1;
+        disk1_filename = "/BLANK_A.DSK"; // Hardcode new filename
+        new_filename = disk1_filename;
+    } else if (drive == 1) {
+        d = &disk_drive.disk2;
+        target_buffer = psram_disk2;
+        disk2_filename = "/BLANK_B.DSK"; // Hardcode new filename
+        new_filename = disk2_filename;
+    } else {
+        return; // Invalid drive
+    }
+
+    if (target_buffer == nullptr) {
+        Serial.printf("ERR: Cannot mount blank, PSRAM buffer for D%d is NULL.\r\n", drive);
+        return;
+    }
+
+    Serial.printf("Mounting blank (0xE5) image in Drive %d (as %s)...\r\n", drive, new_filename);
+    
+    // Fill the entire PSRAM buffer with 0xE5
+    memset(target_buffer, 0xE5, DISK_IMAGE_SIZE);
+
+    // Reset the disk structure's state
+    d->track = 0;
+    d->sector = 0;
+    d->status = (STATUS_HEAD | STATUS_NRDA | STATUS_CR | STATUS_TRACK_0); // At track 0
+    d->buffer_pos = 0;
+    d->buffer_dirty = true; // Mark it as dirty so it *will* be saved!
+    d->write_active = false;
+
+    // If this was the current drive, flush its state to be safe
+    if (disk_drive.current == d) {
+        disk_flush(d);
+    }
+    
+    Serial.println("Blank mount complete.");
 }
