@@ -153,8 +153,8 @@ extern uint8_t global_autoboot_action;
 // === WiFi / Network Credentials ===
 // =======================================================
 // NVS Keys for Wi-Fi
-#define DEFAULT_WIFI_SSID "skylernet"
-#define DEFAULT_WIFI_PASS "tilt0waitsplunDger"
+#define DEFAULT_WIFI_SSID "XXXXX"
+#define DEFAULT_WIFI_PASS "XXXXXXXXXXXXXXXX"
 extern const char* NVS_WIFI_SSID ;
 extern const char* NVS_WIFI_PASS ;
 
