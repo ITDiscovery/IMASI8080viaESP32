@@ -299,28 +299,22 @@ This defines the mapping of the 40 shift register bits to the 8080's address, da
 
 ---
 
-## ⏭️ ToDo List (Current Priorities)
+## 🚀 Next Steps and Future Enhancements (To Do)
 
-This list focuses on tasks required to achieve a complete, functional IMSAI 8080 replica:
+### Current Focus: Phase 4 Development
 
-1.  **Floppy Disk Write implementation.** (Current Major Focus)
-2.  The code needs **refactoring**, specifically in the **I/O handling routines.**
-3.  Look into adding support for the optional **8K BASIC interpreter.**
-4.  I can now add **WiFi via SSH** to this.
-5.  Needs lots of **speed ups** (I/O refactoring will help with this).
-6.  Review **pull request #45** (LED refresh issue).
+| Task | Summary |
+| :--- | :--- |
+| **Emulate Hard Disk Controller (Wedge)** | Implement a Read-Only (RO) wedge solution to load and read a **Z80Pack 1.1Mb file** to patch CP/M and mount the filesystem. (Full RAM-based HDD is currently memory-constrained). |
+| **Minidisk Support** | Implement logic to **auto-detect and support smaller disk image formats** by correctly updating disk geometry parameters (`NUM_TRACKS`, `NUM_SECTORS`). |
+| **Verify and Post Rev D board** | **Finalize and verify the new Rev D board**, which is designed to use an **ESP-32-S3-Zero** module. |
 
----
+### Future Enhancements (Deep Emulation)
 
-## ✨ Future Features (Secondary Goals)
-
-These are secondary goals that can be addressed once the core IMSAI 8080 emulation is complete and stable:
-
-* Would be nice to have it connectable to a **Raspberry Pi**.
-* Make smaller **Blinkin Boards to extend:** Such as a 7-Segment to show address and data bus values.
-* Would be nice to allow it to emulate other blinkinlight platforms (e.g., PDP-8).
-
----
+| Task | Detail |
+| :--- | :--- |
+| **Emulate Memory Mapping** | Necessary for supporting more advanced operating systems or software that utilizes **bank switching** or sophisticated memory management. |
+| **Emulate Z-80 Processor** | A major enhancement to emulate the Z-80 CPU, which would **significantly expand the range of compatible software**. |
 
 ## 🔗 External Resources
 
