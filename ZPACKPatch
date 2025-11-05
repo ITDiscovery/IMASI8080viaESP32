@@ -1,294 +1,357 @@
-Code for later to on the fly patch CPM to allow reading and writing of Z80Packs loaded using hdsk_psram. 
-
-
-```
-; ------------------------------------------------------------------
-; HDINIT.ASM
 ;
-; CP/M 2.2 BIOS Patcher for Read-Only Hard Drive
-; Assembles with ASM.COM, loads with LOAD.COM
-; ------------------------------------------------------------------
+; HDSK.ASM
+; ALTAIR 88-HDSK DRIVER FOR CP/M 2.2
+;
+; THIS DRIVER ADDS SUPPORT FOR THE 88-HDSK
+; AT I/O PORTS 0A0H-0A3H AS DRIVE I:
+;
 
-; --- CP/M Equates ---
-BDOS		EQU	0x0005		; BDOS entry point
-BIOS		EQU	0xDA00		; BIOS start for a 56K CP/M system
-TPA_START	EQU	0x0006		; Pointer to top of user program
+; --- EQUATES ---
+BDOS    EQU     0F206H  ; ADDRESS OF BDOS WARM BOOT ENTRY (FOR 56K SYSTEM)
+HDSK_PORTA      EQU     0A0H    ; 4PIO PORT A (DATA/COMMAND)
+HDSK_PORTA_C    EQU     0A1H    ; 4PIO PORT A (CONTROL)
+HDSK_PORTB      EQU     0A2H    ; 4PIO PORT B (STATUS)
+HDSK_PORTB_C    EQU     0A3H    ; 4PIO PORT B (CONTROL)
 
-; --- BIOS Jump Table Offsets ---
-SELDSK_VEC	EQU	BIOS+03H	; JMP SELDSK
-SETTRK_VEC	EQU	BIOS+06H	; JMP SETTRK
-SETSEC_VEC	EQU	BIOS+09H	; JMP SETSEC
-SETDMA_VEC	EQU	BIOS+0CH	; JMP SETDMA
-READ_VEC	EQU	BIOS+0FH	; JMP READ
-WRITE_VEC	EQU	BIOS+12H	; JMP WRITE
+; --- HDSK COMMANDS ---
+HDSK_READ       EQU     01H
+HDSK_WRITE      EQU     02H
+HDSK_SEEK       EQU     03H
 
-; --- Our Hardware Port Equates ---
-HD_PORT_STATUS	EQU	0A0H		; Hard drive status port
-HD_PORT_DATA	EQU	0A1H		; Hard drive data port
-HD_PORT_TRACK_L	EQU	0A2H		; Track Low port
-HD_PORT_TRACK_H	EQU	0A3H		; Track High / Sector port
+; --- HDSK STATUS BITS ---
+HDSK_STAT_BUSY  EQU     80H
+HDSK_STAT_DRQ   EQU     02H
+HDSK_STAT_ERR   EQU     01H
 
-; --- Our Drive Number ---
-HD_DRIVE_NUM	EQU	4		; Drive E:
+; --- 4PIO CONTROL ---
+PIO_DDR_OUT     EQU     0FFH    ; SET 4PIO PORT TO OUTPUT
+PIO_DDR_IN      EQU     00H     ; SET 4PIO PORT TO INPUT
+PIO_RUN_MODE    EQU     04H     ; SET 4PIO TO RUN MODE
 
-; ------------------------------------------------------------------
-; Program Start
-; ------------------------------------------------------------------
-		ORG	0100H		; All .COM files start here
+	ORG	0100H	; ALL .COM FILES START HERE
 
-START:
-		LXI	SP, 0100H	; Set stack pointer out of the way
-		CALL	PATCH_BIOS	; Go install our patches
-		CALL	INSTALL_TSR	; Go protect our code in memory
-		RET			; Return to CP/M (our code is now resident)
+	JMP	HDSK_BOOT_CODE	; JUMP OVER DATA TO CODE
 
-; ------------------------------------------------------------------
-; PATCH_BIOS: Reads the original BIOS jump addresses and
-; inserts jumps to our new hook routines.
-; ------------------------------------------------------------------
-PATCH_BIOS:
-		; --- Patch SELDSK ---
-		LHLD	SELDSK_VEC+1	; Get old JMP address
-		SHLD	OLD_SELDSK	; Save it
-		LXI	H, HOOK_SELDSK	; Get our new routine address
-		SHLD	SELDSK_VEC+1	; Write it to the BIOS JMP table
+; ---------------------------------
+; DATA AREA
+; ---------------------------------
 
-		; --- Patch SETTRK ---
-		LHLD	SETTRK_VEC+1
-		SHLD	OLD_SETTRK
-		LXI	H, HOOK_SETTRK
-		SHLD	SETTRK_VEC+1
+; --- DISK PARAMETER BLOCK ---
+HDSK_DPB:
+	DW	64	; SPT: 64 LOGICAL 128-BYTE SECTORS/TRACK
+	DW	2048	; BSIZE: 2048-BYTE ALLOCATION BLOCKS
+	DB	15	; BLM: (2048/128)-1 = 15
+	DB	7	; EXM: EXTENT MASK = 7
+	DW	560	; DSM: 560 BLOCKS (1.12MB)
+	DW	255	; DRM: 256 DIRECTORY ENTRIES - 1
+	DB	00H	; CKS: 0 (FIXED DISK)
+	DB	00H	; (PADDING FOR CKS)
+	DW	4	; OFF: 4 RESERVED TRACKS
 
-		; --- Patch SETSEC ---
-		LHLD	SETSEC_VEC+1
-		SHLD	OLD_SETSEC
-		LXI	H, HOOK_SETSEC
-		SHLD	SETSEC_VEC+1
+; --- POINTERS TO ORIGINAL BIOS ---
+O_BOOT:
+	DW	0
+O_WBOOT:
+	DW	0
+O_CONST:
+	DW	0
+O_CONIN:
+	DW	0
+O_CONOUT:
+	DW	0
+O_LIST:
+	DW	0
+O_PUNCH:
+	DW	0
+O_READER:
+	DW	0
+O_HOME:
+	DW	0
+O_SELDSK:
+	DW	0
+O_SETTRK:
+	DW	0
+O_SETSEC:
+	DW	0
+O_SETDMA:
+	DW	0
+O_READ:
+	DW	0
+O_WRITE:
+	DW	0
+O_LISTST:
+	DW	0
+O_SECTRAN:
+	DW	0
 
-		; --- Patch SETDMA ---
-		LHLD	SETDMA_VEC+1
-		SHLD	OLD_SETDMA
-		LXI	H, HOOK_SETDMA
-		SHLD	SETDMA_VEC+1
+; --- GLOBALS FOR HDSK DRIVER ---
+HDSK_DRIVE:
+	DB	0	; CURRENTLY SELECTED DRIVE (0-15)
+HDSK_TRACK:
+	DW	0	; CURRENTLY SELECTED TRACK
+HDSK_SECTOR:
+	DB	0	; CURRENTLY SELECTED SECTOR
+HDSK_DMA:
+	DW	80H	; CURRENT DMA ADDRESS
 
-		; --- Patch READ ---
-		LHLD	READ_VEC+1
-		SHLD	OLD_READ
-		LXI	H, HOOK_READ
-		SHLD	READ_VEC+1
+; ---------------------------------
+; CODE AREA
+; ---------------------------------
+HDSK_BOOT_CODE:
+; --- NEW BIOS JUMP TABLE ---
+	JMP	HDSK_BOOT	; 0: BOOT
+	JMP	HDSK_WBOOT	; 1: WBOOT
+	JMP	HDSK_CONST	; 2: CONST
+	JMP	HDSK_CONIN	; 3: CONIN
+	JMP	HDSK_CONOUT	; 4: CONOUT
+	JMP	HDSK_LIST	; 5: LIST
+	JMP	HDSK_PUNCH	; 6: PUNCH
+	JMP	HDSK_READER	; 7: READER
+	JMP	HDSK_HOME	; 8: HOME
+	JMP	HDSK_SELDSK	; 9: SELDSK
+	JMP	HDSK_SETTRK	; 10: SETTRK
+	JMP	HDSK_SETSEC	; 11: SETSEC
+	JMP	HDSK_SETDMA	; 12: SETDMA
+	JMP	HDSK_READ_ENTRY	; 13: READ
+	JMP	HDSK_WRITE_ENTRY; 14: WRITE
+	JMP	HDSK_LISTST	; 15: LISTST
+	JMP	HDSK_SECTRAN	; 16: SECTRAN
 
-		; --- Patch WRITE ---
-		LHLD	WRITE_VEC+1
-		SHLD	OLD_WRITE
-		LXI	H, HOOK_WRITE
-		SHLD	WRITE_VEC+1
+; ---------------------------------
+; NEW BIOS ROUTINES
+; ---------------------------------
+HDSK_BOOT:
+	JMP	O_BOOT
+HDSK_WBOOT:
+	CALL	HDSK_INIT
+	JMP	O_WBOOT
+HDSK_CONST:
+	JMP	O_CONST
+HDSK_CONIN:
+	JMP	O_CONIN
+HDSK_CONOUT:
+	JMP	O_CONOUT
+HDSK_LIST:
+	JMP	O_LIST
+HDSK_PUNCH:
+	JMP	O_PUNCH
+HDSK_READER:
+	JMP	O_READER
+HDSK_LISTST:
+	JMP	O_LISTST
+HDSK_HOME:
+	JMP	O_HOME
 
-		RET
+; --- SELDSK (SELECT DISK) ---
+HDSK_SELDSK:
+	MOV	A, C
+	STA	HDSK_DRIVE
+	CPI	8		; IS IT DRIVE I:?
+	JNZ	HDSK_SEL_FLO
+	LXI	H, HDSK_DPB	; YES, RETURN OUR DPB
+	RET
+HDSK_SEL_FLO:
+	JMP	O_SELDSK
 
-; ------------------------------------------------------------------
-; INSTALL_TSR: Tell CP/M to protect our code by moving the
-; "Top of Program Area" pointer to just above our code.
-; ------------------------------------------------------------------
-INSTALL_TSR:
-		LXI	H, 0		; Dummy operand
-		PUSH	H		; Save space on stack
-		LXI	H, HOOK_END	; Get address of the end of our driver
-		DAD	SP		; Add to stack pointer
-		SHLD	TPA_START	; Set new "top of program" address
-		POP	H		; Clean up stack
-		RET
+; --- SETTRK (SET TRACK) ---
+HDSK_SETTRK:
+	LDA	HDSK_DRIVE
+	CPI	8
+	JNZ	HDSK_SETTRK_FLO
+	MOV	A, C
+	STA	HDSK_TRACK
+	MVI	A, 0
+	STA	HDSK_TRACK+1
+	RET
+HDSK_SETTRK_FLO:
+	JMP	O_SETTRK
 
-; ------------------------------------------------------------------
-; Data Storage Area
-; This section holds our driver's variables and saved JMP addresses.
-; ------------------------------------------------------------------
-OLD_SELDSK:	DS	2
-OLD_SETTRK:	DS	2
-OLD_SETSEC:	DS	2
-OLD_SETDMA:	DS	2
-OLD_READ:	DS	2
-OLD_WRITE:	DS	2
+; --- SETSEC (SET SECTOR) ---
+HDSK_SETSEC:
+	LDA	HDSK_DRIVE
+	CPI	8
+	JNZ	HDSK_SETSEC_FLO
+	MOV	A, C
+	STA	HDSK_SECTOR
+	RET
+HDSK_SETSEC_FLO:
+	JMP	O_SETSEC
 
-; --- Our internal variables ---
-HD_ACTIVE:	DB	0		; 0=Floppy, 1=Hard Drive
-HD_TRACK:	DW	0		; Current selected track
-HD_SECTOR:	DB	0		; Current selected sector
-HD_DMA:		DW	0		; Current DMA address
+; --- SETDMA (SET DMA ADDRESS) ---
+HDSK_SETDMA:
+	MOV	A, B
+	STA	HDSK_DMA+1
+	MOV	A, C
+	STA	HDSK_DMA
+	JMP	O_SETDMA
 
-; ------------------------------------------------------------------
-; NEW BIOS HOOK ROUTINES
-; These intercept the BIOS calls.
-; ------------------------------------------------------------------
+; --- READ (ENTRY POINT) ---
+HDSK_READ_ENTRY:
+	LDA	HDSK_DRIVE
+	CPI	8
+	JNZ	HDSK_READ_FLO
+	
+	; --- SEND HDSK_CMD_READ (01H) ---
+	MVI	A, HDSK_READ
+	CALL	HDSK_SEND_CMD	; (RETURNS Z=1 ON ERROR)
+	JNZ	HDSK_RD_ERR	; JUMP IF ERROR
 
-; --- HOOK SELDSK (Select Disk) ---
-; Input: C = drive number (0=A, 1=B...)
-HOOK_SELDSK:
-		MOV	A, C
-		CPI	HD_DRIVE_NUM	; Is it our drive?
-		JNZ	GO_OLD_SELDSK	; No, jump to old routine
-		
-		; It's our drive
-		MVI	A, 1
-		STA	HD_ACTIVE	; Set our flag
-		XRA	A		; Return 0 (OK)
-		RET
-GO_OLD_SELDSK:
-		XRA	A		; It's a floppy drive
-		STA	HD_ACTIVE	; Clear our flag
-		LHLD	OLD_SELDSK	; Get old JMP address
-		PCHL			; Jump to it
+	; --- TRANSFER 128 BYTES FROM CONTROLLER TO DMA ---
+	LXI	H, 0		; HL = BYTE COUNTER
+	LHLD	HDSK_DMA
+	XCHG			; DE = DMA ADDRESS
+HDSK_READ_LOOP:
+	CALL	HDSK_WAIT_DRQ	; WAIT FOR DRQ
+	JNZ	HDSK_RD_ERR	; TIMEOUT OR ERROR
+	
+	IN	HDSK_PORTA	; READ BYTE FROM DATA PORT
+	STAX	D		; STORE BYTE AT [DE] (DMA ADDR)
+	INX	D		; INCREMENT DMA ADDRESS
+	
+	INX	H		; INCREMENT BYTE COUNTER
+	MOV	A, H		; CHECK IF WE'VE READ 128 BYTES
+	CPI	80H		; (128 DECIMAL)
+	JNZ	HDSK_READ_LOOP	; LOOP IF NOT DONE
 
-; --- HOOK SETTRK (Set Track) ---
-; Input: C = track number
-HOOK_SETTRK:
-		LDA	HD_ACTIVE
-		ORA	A		; Is our drive active?
-		JZ	GO_OLD_SETTRK	; No, jump to old routine
+	; --- WAIT FOR CONTROLLER TO GO IDLE ---
+	CALL	HDSK_WAIT_READY
+	JNZ	HDSK_RD_ERR	; TIMEOUT OR ERROR
 
-		; It's our drive
-		MOV	A, C
-		STA	HD_TRACK	; Save track low byte
-		MVI	A, 0
-		STA	HD_TRACK+1	; Save track high byte (0)
-		; Note: This assumes tracks 0-255
-		RET
-GO_OLD_SETTRK:
-		LHLD	OLD_SETTRK
-		PCHL
+	MVI	A, 0		; RETURN 0 = OK
+	RET
+HDSK_RD_ERR:
+	MVI	A, 1		; RETURN 1 = ERROR
+	RET
+HDSK_READ_FLO:
+	JMP	O_READ
 
-; --- HOOK SETSEC (Set Sector) ---
-; Input: C = sector number
-HOOK_SETSEC:
-		LDA	HD_ACTIVE
-		ORA	A
-		JZ	GO_OLD_SETSEC
+; --- WRITE (ENTRY POINT) ---
+HDSK_WRITE_ENTRY:
+	LDA	HDSK_DRIVE
+	CPI	8
+	JNZ	HDSK_WRITE_FLO
 
-		; It's our drive
-		MOV	A, C
-		STA	HD_SECTOR
-		RET
-GO_OLD_SETSEC:
-		LHLD	OLD_SETSEC
-		PCHL
+	; --- SEND HDSK_CMD_WRITE (02H) ---
+	MVI	A, HDSK_WRITE
+	CALL	HDSK_SEND_CMD	; (RETURNS Z=1 ON ERROR)
+	JNZ	HDSK_WR_ERR	; JUMP IF ERROR
 
-; --- HOOK SETDMA (Set DMA Address) ---
-; Input: BC = DMA address
-HOOK_SETDMA:
-		LDA	HD_ACTIVE
-		ORA	A
-		JZ	GO_OLD_SETDMA
+	; --- TRANSFER 128 BYTES FROM DMA TO CONTROLLER ---
+	LXI	H, 0		; HL = BYTE COUNTER
+	LHLD	HDSK_DMA
+	XCHG			; DE = DMA ADDRESS
+HDSK_WRITE_LOOP:
+	CALL	HDSK_WAIT_DRQ	; WAIT FOR DRQ
+	JNZ	HDSK_WR_ERR	; TIMEOUT OR ERROR
+	
+	LDAX	D		; LOAD BYTE FROM [DE] (DMA ADDR)
+	OUT	HDSK_PORTA	; WRITE BYTE TO DATA PORT
+	INX	D		; INCREMENT DMA ADDRESS
+	
+	INX	H		; INCREMENT BYTE COUNTER
+	MOV	A, H		; CHECK IF WE'VE WRITTEN 128 BYTES
+	CPI	80H		; (128 DECIMAL)
+	JNZ	HDSK_WRITE_LOOP	; LOOP IF NOT DONE
 
-		; It's our drive
-		MOV	A, C
-		STA	HD_DMA		; Save DMA low
-		MOV	A, B
-		STA	HD_DMA+1	; Save DMA high
-		RET
-GO_OLD_SETDMA:
-		LHLD	OLD_SETDMA
-		PCHL
+	; --- WAIT FOR CONTROLLER TO GO IDLE ---
+	CALL	HDSK_WAIT_READY
+	JNZ	HDSK_WR_ERR	; TIMEOUT OR ERROR
 
-; --- HOOK WRITE (Write Sector) ---
-; Returns: A = 0 (OK) or 1 (Error)
-HOOK_WRITE:
-		LDA	HD_ACTIVE
-		ORA	A
-		JZ	GO_OLD_WRITE
+	MVI	A, 0		; RETURN 0 = OK
+	RET
+HDSK_WR_ERR:
+	MVI	A, 1		; RETURN 1 = ERROR
+	RET
+HDSK_WRITE_FLO:
+	JMP	O_WRITE
 
-		; It's our drive, return Write Protect error
-		MVI	A, 1		; 1 = Error
-		RET
-GO_OLD_WRITE:
-		LHLD	OLD_WRITE
-		PCHL
+; --- SECTRAN (SECTOR TRANSLATE) ---
+HDSK_SECTRAN:
+	LDA	HDSK_DRIVE
+	CPI	8
+	JNZ	HDSK_SECTRAN_FLO
+	MOV	A, C	; GET LOGICAL SECTOR
+	MOV	L, A	; RETURN IT IN L
+	RET
+HDSK_SECTRAN_FLO:
+	JMP	O_SECTRAN
 
-; --- HOOK READ (Read Sector) ---
-; Returns: A = 0 (OK) or 1 (Error)
-HOOK_READ:
-		LDA	HD_ACTIVE
-		ORA	A
-		JZ	GO_OLD_READ
+; ---------------------------------
+; HDSK HELPER ROUTINES
+; ---------------------------------
 
-		; It's our drive, do the read
-		CALL	DO_HD_READ
-		XRA	A		; Return 0 (OK)
-		RET
-GO_OLD_READ:
-		LHLD	OLD_READ
-		PCHL
+; --- HDSK_INIT ---
+HDSK_INIT:
+	MVI	A, PIO_DDR_IN
+	OUT	HDSK_PORTA
+	MVI	A, PIO_RUN_MODE
+	OUT	HDSK_PORTA_C
+	MVI	A, PIO_DDR_IN
+	OUT	HDSK_PORTB
+	MVI	A, PIO_RUN_MODE
+	OUT	HDSK_PORTB_C
+	RET
 
-; ------------------------------------------------------------------
-; DO_HD_READ: Our actual hardware read routine.
-; This talks to the ports based on hdsk_psram.cpp
-; ------------------------------------------------------------------
-DO_HD_READ:
-		; 1. Set Track
-		LDA	HD_TRACK
-		OUT	HD_PORT_TRACK_L	; Send Track Low
+; --- HDSK_WAIT_READY ---
+HDSK_WAIT_READY:
+	PUSH	B
+	MVI	B, 0FFH
+HDSK_WAIT_R_LOOP:
+	IN	HDSK_PORTB
+	ANI	HDSK_STAT_BUSY
+	JZ	HDSK_WAIT_R_OK
+	DJNZ	HDSK_WAIT_R_LOOP
+	POP	B
+	ORA	A		; SET Z=1 (ERROR)
+	RET
+HDSK_WAIT_R_OK:
+	POP	B
+	MVI	A, 1		; SET Z=0 (SUCCESS)
+	RET
 
-		; 2. Set Sector (and Track High, which is 0)
-		LDA	HD_SECTOR
-		ANI	1FH		; Mask to 5 bits (0-31)
-		; We assume Track High is 0, so ORA H is not needed
-		OUT	HD_PORT_TRACK_H	; Sets Track High=0 and Sector
-		
-		; 3. Read 128 bytes
-		LHLD	HD_DMA		; Get DMA destination address
-		MVI	B, 128		; Loop 128 times
+; --- HDSK_WAIT_DRQ ---
+HDSK_WAIT_DRQ:
+	PUSH	B
+	MVI	B, 0FFH
+HDSK_WAIT_D_LOOP:
+	IN	HDSK_PORTB
+	ANI	HDSK_STAT_ERR
+	JNZ	HDSK_WAIT_D_ERR
+	IN	HDSK_PORTB
+	ANI	HDSK_STAT_DRQ
+	JNZ	HDSK_WAIT_D_OK
+	DJNZ	HDSK_WAIT_D_LOOP
+HDSK_WAIT_D_ERR:
+	POP	B
+	ORA	A		; SET Z=1 (ERROR)
+	RET
+HDSK_WAIT_D_OK:
+	POP	B
+	MVI	A, 1		; SET Z=0 (SUCCESS)
+	RET
 
-READ_LOOP:
-		; Wait for Data Ready bit (Bit 7)
-		IN	HD_PORT_STATUS
-		ANI	80H
-		JZ	READ_LOOP	; Loop if not ready
-		
-		; Read the byte
-		IN	HD_PORT_DATA	; Get data byte
-		MOV	M, A		; Store at DMA address (HL)
-		INX	H		; Next DMA address
-		DCR	B		; Decrement counter
-		JNZ	READ_LOOP	; Loop if not done
+; --- HDSK_SEND_CMD ---
+HDSK_SEND_CMD:
+	CALL	HDSK_WAIT_READY
+	JNZ	HDSK_CMD_ERR
+	OUT	HDSK_PORTA	; SEND COMMAND BYTE
+	CALL	HDSK_WAIT_DRQ
+	JNZ	HDSK_CMD_ERR
+	LDA	HDSK_TRACK
+	OUT	HDSK_PORTA	; SEND TRACK LOW
+	CALL	HDSK_WAIT_DRQ
+	JNZ	HDSK_CMD_ERR
+	LDA	HDSK_TRACK+1
+	OUT	HDSK_PORTA	; SEND TRACK HIGH
+	CALL	HDSK_WAIT_DRQ
+	JNZ	HDSK_CMD_ERR
+	LDA	HDSK_SECTOR
+	OUT	HDSK_PORTA	; SEND SECTOR
+	MVI	A, 1		; SUCCESS (Z=0)
+	RET
+HDSK_CMD_ERR:
+	ORA	A		; ERROR (Z=1)
+	RET
 
-		RET			; Finished sector read
+	END
 
-; ------------------------------------------------------------------
-HOOK_END:	NOP			; Marker for the end of our resident code
-		END
-```
-Your Next Steps
-
-Enter the Code:
-
-A>ED HDINIT.ASM
-
-Use I (Insert) to type in the code.
-
-When done, hit Ctrl-Z to exit Insert mode.
-
-Use E (End) to save and exit ED.
-
-Assemble the Code:
-
-A>ASM HDINIT.ASM
-
-This will create HDINIT.HEX and HDINIT.PRN.
-
-Create the Executable:
-
-A>LOAD HDINIT
-
-This will create HDINIT.COM.
-
-Run the Patcher:
-
-A>HDINIT
-
-If all goes well, it will run and immediately return you to the A> prompt. The patch is now active.
-
-Test It!
-
-A>STAT E:
-
-A>DIR E:
-
-If this works, you've successfully patched CP/M in memory and can now use PIP to copy files from your read-only archive drive.
