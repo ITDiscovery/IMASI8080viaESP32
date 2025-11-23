@@ -80,3 +80,41 @@ Timing
 latch_delay	float	1e-6	Pause after Latch toggle (Seconds).
 clock_delay	float	4e-6	Pause during Clock pulse (Seconds).
 
+API Reference
+Output Methods (LEDs)
+update_leds()
+Description: Pushes the current internal buffer state to the physical hardware. Note: Changes made via set_led or set_all_leds will not be visible until this is called.
+
+set_all_leds(val: int)
+Description: Sets the entire LED chain to a specific integer value. Example: board.set_all_leds(0xFF) turns on the first 8 LEDs.
+
+set_led(index: int, state: bool)
+Description: Modifies a single bit in the internal buffer.
+
+index: 0 to (Total Bits - 1). Bit 0 is the last bit shifted out (furthest from Pi).
+
+state: True (ON) or False (OFF).
+
+clear_leds() / fill_leds()
+Description: Helper methods to set the buffer to all Zeros or all Ones.
+
+Input Methods (Switches)
+read_switches() -> int
+Description: Triggers a latch sequence and reads the full state of the input chain. Returns: A 32-bit (or size of num_switch_chips) integer representing the switch states. Logic:
+
+Default: Returns raw logic level.
+
+If sw_inversion_mask is used, returns RAW ^ MASK.
+
+Troubleshooting
+Flickering Inputs / Ghost Bits
+If flipping one switch causes adjacent bits to flicker or stick:
+
+Check Resistors: Ensure Pull-Up/Pull-Down resistor networks are installed and oriented correctly (Pin 1 to Common).
+
+Increase Delay: Increase latch_delay to 0.00005 (50µs) in initialization.
+
+LEDs Not Updating or "Glitching"
+Ground Bounce: If turning on all LEDs causes the board to crash/reset, the power supply is sagging. Use Red LEDs (lower voltage drop) or add decoupling capacitors.
+
+Inversion: If 0 turns an LED on, set led_inversion_mask to all ones (e.g., 0xFFFFFFFFFF).
